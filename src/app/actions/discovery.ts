@@ -62,3 +62,112 @@ export async function getScrapedPosts(clientId: string): Promise<WebhookReelData
         return []
     }
 }
+
+export async function savePost(clientId: string, post: WebhookReelData) {
+    const supabase = await createClient()
+
+    try {
+        const { error } = await supabase
+            .from('posts_salvos')
+            .insert({
+                client_id: clientId,
+                created_at: new Date().toISOString(),
+                tipoPost: 'Reel',
+                urlPost: post.videoUrl,
+                legendaPost: post.caption,
+                viewCount: post.viewCount.toString(),
+                playCount: post.viewCount.toString(),
+                scriptUsado: '',
+                original_post_id: post.id,
+                thumbnailurl: post.displayUrl || post.thumbnailUrl
+            })
+
+        if (error) {
+            console.error("[savePost] Error saving post:", error)
+            throw error
+        }
+
+        return { success: true }
+    } catch (error) {
+        console.error("[savePost] Unexpected error saving post:", error)
+        return { success: false, error }
+    }
+}
+
+export async function removePost(clientId: string, postId: string) {
+    const supabase = await createClient()
+
+    try {
+        const { error } = await supabase
+            .from('posts_salvos')
+            .delete()
+            .eq('client_id', clientId)
+            .eq('original_post_id', postId)
+
+        if (error) {
+            console.error("[removePost] Error removing post:", error)
+            throw error
+        }
+
+        return { success: true }
+    } catch (error) {
+        console.error("[removePost] Unexpected error removing post:", error)
+        return { success: false, error }
+    }
+}
+
+export async function getSavedPostIds(clientId: string): Promise<string[]> {
+    const supabase = await createClient()
+
+    try {
+        const { data, error } = await supabase
+            .from('posts_salvos')
+            .select('original_post_id')
+            .eq('client_id', clientId)
+
+        if (error) {
+            console.error("[getSavedPostIds] Error fetching saved posts:", error)
+            return []
+        }
+
+        return data.map(item => item.original_post_id).filter(Boolean) as string[]
+    } catch (error) {
+        return []
+    }
+}
+
+export async function getSavedPosts(clientId: string): Promise<WebhookReelData[]> {
+    const supabase = await createClient()
+
+    try {
+        const { data, error } = await supabase
+            .from('posts_salvos')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false })
+
+        if (error) {
+            console.error("[getSavedPosts] Error fetching saved posts:", error)
+            return []
+        }
+
+        if (!data) return []
+
+        return data.map((post) => ({
+            id: post.original_post_id || post.id.toString(),
+            username: 'Unknown',
+            caption: post.legendaPost || '',
+            timestamp: new Date(post.created_at).toISOString(),
+            viewCount: parseInt(post.viewCount || '0'),
+            likeCount: 0,
+            commentCount: 0,
+            videoUrl: post.urlPost || '',
+            thumbnailUrl: post.thumbnailurl || '',
+            displayUrl: post.thumbnailurl || undefined,
+            platform: 'instagram' as const
+        }))
+    } catch (error) {
+        console.error("[getSavedPosts] Unexpected error:", error)
+        return []
+    }
+}

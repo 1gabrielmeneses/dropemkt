@@ -1,26 +1,312 @@
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { useState } from "react"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from "date-fns"
+import { useState, useEffect } from "react"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, parseISO } from "date-fns"
 import { useStore } from "@/store/useStore"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react"
+import { ChevronLeft, ChevronRight, GripVertical, Plus, MoreHorizontal, Pencil, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { createMarker, getMarkers, updateMarker, deleteMarker, Marker, createCalendarEvent, getCalendarEvents, deleteCalendarEvent } from "@/app/actions/calendar"
+import { toast } from "sonner"
+import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+
+const MARKER_COLORS = [
+    "#FEF3C7", // Amber (Yellow)
+    "#FEE2E2", // Red
+    "#DCFCE7", // Green
+    "#DBEAFE", // Blue
+    "#F3E8FF", // Purple
+    "#FFEDD5", // Orange
+    "#F1F5F9", // Slate
+    "#ECFCCB", // Lime
+]
+
+type CalendarEvent = Awaited<ReturnType<typeof getCalendarEvents>>[number]
+
+function DraggableMarker({ marker, onClick, onEdit, onDelete }: { marker: Marker, onClick?: () => void, onEdit: (m: Marker) => void, onDelete: (id: number) => void }) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `marker-source-${marker.id}`,
+        data: { marker, type: 'marker-source' }
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            className={cn(
+                "aspect-square w-full rounded-md p-2 flex flex-col items-center justify-center text-center shadow-sm relative group transition-all cursor-grab active:cursor-grabbing",
+                isDragging ? "opacity-30" : "opacity-100"
+            )}
+            style={{ backgroundColor: marker.color }}
+            title={marker.description || ''}
+            onClick={onClick}
+        >
+            <span className="text-xs font-semibold text-slate-800 line-clamp-3 leading-tight break-words w-full pointer-events-none">
+                {marker.name}
+            </span>
+
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity" onPointerDown={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-white/50 hover:bg-white/80 text-slate-700">
+                            <MoreHorizontal className="h-3 w-3" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onEdit(marker)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(marker.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            Excluir
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
+    )
+}
+
+function CalendarDay({ day, currentDate, events, onDeleteEvent }: { day: Date, currentDate: Date, events: CalendarEvent[], onDeleteEvent: (id: string) => void }) {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    const { setNodeRef, isOver } = useDroppable({
+        id: dateStr,
+        data: { date: day }
+    });
+
+    const isToday = isSameDay(day, new Date());
+    const isCurrentMonth = isSameMonth(day, currentDate);
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={cn(
+                "p-2 min-h-[100px] transition-colors relative group flex flex-col items-start gap-1",
+                !isCurrentMonth && "bg-muted/10",
+                isOver && "bg-primary/10 ring-2 ring-inset ring-primary/20",
+                isToday && "bg-blue-50/50 dark:bg-blue-900/10"
+            )}
+        >
+            <span className={cn(
+                "text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full shrink-0",
+                isToday ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground",
+                !isCurrentMonth && !isToday && "opacity-50"
+            )}>
+                {format(day, 'd')}
+            </span>
+
+            <div className="flex flex-col gap-1 w-full flex-1">
+                {events.map(event => (
+                    <div
+                        key={event.id}
+                        className="text-[10px] p-1.5 rounded shadow-sm relative group/event transition-all hover:scale-[1.02] cursor-default"
+                        style={{ backgroundColor: event.marker?.color || '#fff' }}
+                        title={event.marker?.description || ''}
+                    >
+                        <p className="font-semibold text-slate-800 line-clamp-2 leading-tight">
+                            {event.marker?.name || 'Event'}
+                        </p>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteEvent(event.id);
+                            }}
+                            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/event:opacity-100 transition-opacity shadow-sm hover:scale-110"
+                        >
+                            <span className="sr-only">Delete</span>
+                            <span className="h-3 w-3 flex items-center justify-center text-[10px]">&times;</span>
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
 
 export default function CalendarPage() {
-    const { getActiveClient, activeClientId } = useStore()
+    const { getActiveClient } = useStore()
     const activeClient = getActiveClient()
     const [currentDate, setCurrentDate] = useState(new Date())
 
+    // Markers State
+    const [markers, setMarkers] = useState<Marker[]>([])
+    const [isCreateMarkerOpen, setIsCreateMarkerOpen] = useState(false)
+    const [newMarkerName, setNewMarkerName] = useState("")
+    const [newMarkerDesc, setNewMarkerDesc] = useState("")
+
+    const [isEditMarkerOpen, setIsEditMarkerOpen] = useState(false)
+    const [editingMarker, setEditingMarker] = useState<Marker | null>(null)
+    const [editMarkerName, setEditMarkerName] = useState("")
+    const [editMarkerDesc, setEditMarkerDesc] = useState("")
+
+    // Calendar Events State
+    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
+    const [activeDragItem, setActiveDragItem] = useState<Marker | null>(null)
+
+    // Recurrence State
+    const [isRecurrenceDialogOpen, setIsRecurrenceDialogOpen] = useState(false)
+    const [pendingDrop, setPendingDrop] = useState<{ dateStr: string, marker: Marker } | null>(null)
+    const [recurrenceType, setRecurrenceType] = useState<'none' | 'weeks'>('none')
+    const [recurrenceWeeks, setRecurrenceWeeks] = useState(1)
+
     // Fallback if no client selected
     const savedContent = activeClient?.savedContent || []
+
+    useEffect(() => {
+        if (activeClient) {
+            getMarkers(activeClient.id).then(setMarkers)
+            getCalendarEvents(activeClient.id).then(setCalendarEvents)
+        }
+    }, [activeClient])
+
+    const getRandomColor = () => MARKER_COLORS[Math.floor(Math.random() * MARKER_COLORS.length)]
+
+    const handleCreateMarker = async () => {
+        if (!activeClient || !newMarkerName) return
+
+        const color = getRandomColor()
+        const result = await createMarker(activeClient.id, newMarkerName, newMarkerDesc, color)
+        if (result.success && result.marker) {
+            setMarkers(prev => [result.marker!, ...prev])
+            setNewMarkerName("")
+            setNewMarkerDesc("")
+            setIsCreateMarkerOpen(false)
+            toast.success("Marcador criado!")
+        } else {
+            toast.error("Erro ao criar marcador")
+        }
+    }
+
+    const handleDeleteMarker = async (id: number) => {
+        const result = await deleteMarker(id)
+        if (result.success) {
+            setMarkers(prev => prev.filter(m => m.id !== id))
+            toast.success("Marcador excluído")
+        } else {
+            toast.error("Erro ao excluir marcador")
+        }
+    }
+
+    const startEditMarker = (marker: Marker) => {
+        setEditingMarker(marker)
+        setEditMarkerName(marker.name)
+        setEditMarkerDesc(marker.description || "")
+        setIsEditMarkerOpen(true)
+    }
+
+    const handleUpdateMarker = async () => {
+        if (!editingMarker) return
+
+        const result = await updateMarker(editingMarker.id, {
+            name: editMarkerName,
+            description: editMarkerDesc
+        })
+
+        if (result.success && result.marker) {
+            setMarkers(prev => prev.map(m => m.id === editingMarker.id ? result.marker! : m))
+            setIsEditMarkerOpen(false)
+            toast.success("Marcador atualizado")
+        } else {
+            toast.error("Erro ao atualizar marcador")
+        }
+    }
+
+    // Drag and Drop Handlers
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+        if (active.data.current?.type === 'marker-source') {
+            setActiveDragItem(active.data.current.marker);
+        }
+    }
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        setActiveDragItem(null);
+
+        if (!over || !activeClient) return;
+
+        const dateStr = over.id as string;
+        if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return;
+
+        if (active.data.current?.type === 'marker-source') {
+            const marker = active.data.current.marker as Marker;
+            setPendingDrop({ dateStr, marker })
+            setRecurrenceType('none')
+            setRecurrenceWeeks(1)
+            setIsRecurrenceDialogOpen(true)
+        }
+    }
+
+    const confirmDrop = async () => {
+        if (!pendingDrop || !activeClient) return
+
+        setIsRecurrenceDialogOpen(false)
+        const { dateStr, marker } = pendingDrop
+        const recurrenceOptions = { type: recurrenceType, count: recurrenceType === 'weeks' ? Number(recurrenceWeeks) : undefined }
+
+        // Optimistic update for single event (simplification)
+        const tempId = `temp-${Date.now()}`;
+        const optimisticEvent: any = { // Partial CalendarEvent
+            id: tempId,
+            client_id: activeClient.id,
+            scheduled_at: dateStr,
+            marker_id: marker.id,
+            content_item_id: null,
+            status: 'scheduled',
+            created_at: new Date().toISOString(),
+            notes: null,
+            marker: marker,
+            content_item: null
+        };
+        setCalendarEvents(prev => [...prev, optimisticEvent]);
+
+        const utcDate = new Date(dateStr)
+        const result = await createCalendarEvent(activeClient.id, utcDate.toISOString(), marker.id, undefined, undefined, recurrenceOptions);
+
+        if (result.success && result.events) {
+            const freshEvents = await getCalendarEvents(activeClient.id) || []
+            setCalendarEvents(freshEvents as CalendarEvent[])
+            toast.success("Agendado com sucesso!");
+        } else {
+            setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
+            toast.error("Erro ao agendar");
+        }
+        setPendingDrop(null)
+    }
+
+    const handleDeleteEvent = async (eventId: string) => {
+        const prevEvents = [...calendarEvents];
+        const eventToDelete = calendarEvents.find(e => e.id === eventId)
+        if (!eventToDelete) return
+
+        if (eventToDelete.recurrence_group_id) {
+            setCalendarEvents(prev => prev.filter(e => e.recurrence_group_id !== eventToDelete.recurrence_group_id))
+        } else {
+            setCalendarEvents(prev => prev.filter(e => e.id !== eventId))
+        }
+
+        const result = await deleteCalendarEvent(eventId);
+        if (!result.success) {
+            setCalendarEvents(prevEvents);
+            toast.error("Erro ao remover do calendário");
+        } else {
+            toast.success("Removido do calendário");
+        }
+    }
 
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(currentDate)
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
-    // Calculate padding days for the start of the month
     const startDay = getDay(monthStart)
     const paddingDays = Array.from({ length: startDay })
 
@@ -28,102 +314,232 @@ export default function CalendarPage() {
     const prevMonth = () => setCurrentDate(addDays(monthStart, -1))
 
     return (
-        <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">Editorial Calendar</h1>
-                    <p className="text-muted-foreground mt-1">
-                        {activeClient ? `Plan for: ${activeClient.name}` : "Select a client to plan."}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 bg-card border rounded-md p-1">
-                    <Button variant="ghost" size="icon" onClick={prevMonth}>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="font-semibold w-32 text-center select-none">
-                        {format(currentDate, 'MMMM yyyy')}
-                    </span>
-                    <Button variant="ghost" size="icon" onClick={nextMonth}>
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            <div className="flex flex-1 gap-6 overflow-hidden">
-                {/* Visual Calendar Grid */}
-                <div className="flex-1 bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col">
-                    <div className="grid grid-cols-7 border-b bg-muted/30">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                            <div key={day} className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                {day}
-                            </div>
-                        ))}
+        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-primary">Editorial Calendar</h1>
+                        <p className="text-muted-foreground mt-1">
+                            {activeClient ? `Plan for: ${activeClient.name}` : "Select a client to plan."}
+                        </p>
                     </div>
-
-                    <div className="grid grid-cols-7 grid-rows-5 flex-1 divide-x divide-y">
-                        {paddingDays.map((_, i) => (
-                            <div key={`padding-${i}`} className="bg-muted/5 p-2" />
-                        ))}
-
-                        {daysInMonth.map((day) => (
-                            <div
-                                key={day.toString()}
-                                className={cn(
-                                    "p-2 hover:bg-muted/30 transition-colors relative group min-h-[100px]",
-                                    !isSameMonth(day, currentDate) && "text-muted-foreground bg-muted/10",
-                                    isSameDay(day, new Date()) && "bg-blue-50/50 dark:bg-blue-900/10"
-                                )}
-                            >
-                                <span className={cn(
-                                    "text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full mb-1",
-                                    isSameDay(day, new Date()) ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground group-hover:text-foreground"
-                                )}>
-                                    {format(day, 'd')}
-                                </span>
-
-                                <div className="space-y-1">
-                                    {/* Mock Events for specific client dates would go here */}
-                                    {/* Keeping static demo events for visual verification only */}
-                                </div>
-                            </div>
-                        ))}
+                    <div className="flex items-center gap-2 bg-card border rounded-md p-1">
+                        <Button variant="ghost" size="icon" onClick={prevMonth}>
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="font-semibold w-32 text-center select-none">
+                            {format(currentDate, 'MMMM yyyy')}
+                        </span>
+                        <Button variant="ghost" size="icon" onClick={nextMonth}>
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
 
-                {/* Sidebar draggable items */}
-                <div className="w-80 flex flex-col gap-4">
-                    <Card className="flex-1 flex flex-col shadow-sm border-dashed">
-                        <CardHeader className="pb-3 border-b bg-muted/10">
-                            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                                Unscheduled Content
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-auto space-y-3 p-4 bg-muted/5">
-                            {savedContent.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        No content ready.
-                                        <br />
-                                        Head to Discovery to find ideas.
-                                    </p>
+                <div className="flex flex-1 gap-6 overflow-hidden">
+                    {/* Visual Calendar Grid */}
+                    <div className="flex-1 bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col">
+                        <div className="grid grid-cols-7 border-b bg-muted/30">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {day}
                                 </div>
-                            ) : (
-                                savedContent.map(content => (
-                                    <div key={content.id} className="group p-3 border rounded-lg bg-card shadow-sm hover:shadow-md transition-all cursor-move flex gap-3 items-start select-none">
-                                        <GripVertical className="h-4 w-4 text-muted-foreground mt-1 opacity-50 group-hover:opacity-100" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-sm line-clamp-2 leading-tight mb-1">{content.title}</p>
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                                {content.platform} • {content.views} views
-                                            </p>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-7 grid-rows-5 flex-1 divide-x divide-y">
+                            {paddingDays.map((_, i) => (
+                                <div key={`padding-${i}`} className="bg-muted/5 p-2" />
+                            ))}
+
+                            {daysInMonth.map((day) => (
+                                <CalendarDay
+                                    key={day.toString()}
+                                    day={day}
+                                    currentDate={currentDate}
+                                    events={calendarEvents.filter(e => isSameDay(parseISO(e.scheduled_at), day))}
+                                    onDeleteEvent={handleDeleteEvent}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Sidebar draggable items */}
+                    <div className="w-96 flex flex-col gap-4">
+                        <Card className="flex-1 flex flex-col shadow-sm border-dashed">
+                            <CardHeader className="pb-3 border-b bg-muted/10">
+                                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Scheduled Content
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 overflow-auto p-4 bg-muted/5">
+                                <Tabs defaultValue="marcadores" className="w-full h-full flex flex-col">
+                                    <TabsList className="w-full grid grid-cols-2 mb-4">
+                                        <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
+                                        <TabsTrigger value="marcadores">Marcadores</TabsTrigger>
+                                    </TabsList>
+
+                                    <TabsContent value="conteudo" className="flex-1 space-y-3 mt-0">
+                                        {savedContent.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                                                <p className="text-sm text-muted-foreground">
+                                                    No content ready.
+                                                    <br />
+                                                    Head to Discovery to find ideas.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            savedContent.map(content => (
+                                                <div key={content.id} className="group p-3 border rounded-lg bg-card shadow-sm hover:shadow-md transition-all cursor-move flex gap-3 items-start select-none">
+                                                    <GripVertical className="h-4 w-4 text-muted-foreground mt-1 opacity-50 group-hover:opacity-100" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium text-sm line-clamp-2 leading-tight mb-1">{content.title}</p>
+                                                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                                            {content.platform} • {content.views} views
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </TabsContent>
+
+                                    <TabsContent value="marcadores" className="flex-1 mt-0">
+                                        <div className="grid grid-cols-3 gap-3 align-start content-start">
+                                            <Dialog open={isCreateMarkerOpen} onOpenChange={setIsCreateMarkerOpen}>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" className="aspect-square w-full flex flex-col items-center justify-center gap-1 border-dashed hover:border-solid bg-transparent">
+                                                        <Plus className="h-5 w-5" />
+                                                        <span className="text-xs">Novo</span>
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Criar Novo Marcador</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="name">Nome</Label>
+                                                            <Input id="name" value={newMarkerName} onChange={(e) => setNewMarkerName(e.target.value)} placeholder="Ex: Urgente, Promoção..." />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="description">Descrição</Label>
+                                                            <Textarea id="description" value={newMarkerDesc} onChange={(e) => setNewMarkerDesc(e.target.value)} placeholder="Opcional" />
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button onClick={handleCreateMarker}>Criar</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+
+                                            {markers.map(marker => (
+                                                <DraggableMarker
+                                                    key={marker.id}
+                                                    marker={marker}
+                                                    onEdit={startEditMarker}
+                                                    onDelete={handleDeleteMarker}
+                                                />
+                                            ))}
+
+                                            <Dialog open={isEditMarkerOpen} onOpenChange={setIsEditMarkerOpen}>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Editar Marcador</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="edit-name">Nome</Label>
+                                                            <Input id="edit-name" value={editMarkerName} onChange={(e) => setEditMarkerName(e.target.value)} />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="edit-description">Descrição</Label>
+                                                            <Textarea id="edit-description" value={editMarkerDesc} onChange={(e) => setEditMarkerDesc(e.target.value)} />
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button onClick={handleUpdateMarker}>Salvar</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
                                         </div>
-                                    </div>
-                                ))
-                            )}
-                        </CardContent>
-                    </Card>
+                                    </TabsContent>
+                                </Tabs>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <Dialog open={isRecurrenceDialogOpen} onOpenChange={setIsRecurrenceDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Agendar Marcador</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Label className="min-w-24">Tipo:</Label>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant={recurrenceType === 'none' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setRecurrenceType('none')}
+                                    >
+                                        Uma vez
+                                    </Button>
+                                    <Button
+                                        variant={recurrenceType === 'weeks' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setRecurrenceType('weeks')}
+                                    >
+                                        Recorrente
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {recurrenceType === 'weeks' && (
+                                <div className="flex items-center gap-2">
+                                    <Label className="min-w-24">Semanas:</Label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={10}
+                                        value={recurrenceWeeks}
+                                        onChange={(e) => {
+                                            const val = Number(e.target.value)
+                                            if (val <= 10 && val >= 1) setRecurrenceWeeks(val)
+                                        }}
+                                        className="w-24"
+                                    />
+                                    <span className="text-xs text-muted-foreground">(Máx. 10)</span>
+                                </div>
+                            )}
+
+                            <p className="text-sm text-muted-foreground">
+                                {recurrenceType === 'none' && "Agendar apenas para este dia."}
+                                {recurrenceType === 'weeks' && `Repetir por ${recurrenceWeeks} semanas neste dia da semana.`}
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsRecurrenceDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={confirmDrop}>Confirmar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <DragOverlay>
+                {activeDragItem ? (
+                    <div
+                        className="aspect-square w-24 rounded-md p-2 flex flex-col items-center justify-center text-center shadow-lg ring-2 ring-primary opacity-90"
+                        style={{ backgroundColor: activeDragItem.color }}
+                    >
+                        <span className="text-xs font-semibold text-slate-800 line-clamp-3 leading-tight break-words">
+                            {activeDragItem.name}
+                        </span>
+                    </div>
+                ) : null}
+            </DragOverlay>
+        </DndContext>
     )
 }

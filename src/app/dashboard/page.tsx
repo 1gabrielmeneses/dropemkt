@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Download, Users } from "lucide-react"
@@ -13,12 +13,48 @@ import { DemographicsChart } from "@/components/dashboard/analytics/Demographics
 import { ActiveHoursChart } from "@/components/dashboard/analytics/ActiveHoursChart"
 import { TopContentList } from "@/components/dashboard/analytics/TopContentList"
 import { CompetitorDiscoveryModal } from "@/components/dashboard/CompetitorDiscoveryModal"
+import { getSavedPosts, removePost } from "@/app/actions/discovery"
+import { WebhookReelData } from "@/app/actions/webhook"
+import { ReelCard } from "@/components/discovery/ReelCard"
+import { VideoModal } from "@/components/discovery/VideoModal"
+import { toast } from "sonner"
 
 export default function DashboardPage() {
     const { getActiveClient } = useStore()
     const activeClient = getActiveClient()
     const [addProfileOpen, setAddProfileOpen] = useState(false)
     const [discoveryOpen, setDiscoveryOpen] = useState(false)
+
+    // Saved Posts State
+    const [savedPosts, setSavedPosts] = useState<WebhookReelData[]>([])
+    const [videoModalOpen, setVideoModalOpen] = useState(false)
+    const [selectedVideoUrl, setSelectedVideoUrl] = useState("")
+
+    useEffect(() => {
+        if (activeClient) {
+            getSavedPosts(activeClient.id).then(posts => {
+                setSavedPosts(posts)
+            })
+        }
+    }, [activeClient])
+
+    const handleRemoveSaved = async (reel: WebhookReelData) => {
+        if (!activeClient) return
+
+        try {
+            toast.loading("Removendo post...", { id: "remove-saved" })
+            const result = await removePost(activeClient.id, reel.id)
+
+            if (result.success) {
+                toast.success("Post removido!", { id: "remove-saved" })
+                setSavedPosts(prev => prev.filter(p => p.id !== reel.id))
+            } else {
+                toast.error("Erro ao remover post", { id: "remove-saved" })
+            }
+        } catch (error) {
+            toast.error("Erro inesperado", { id: "remove-saved" })
+        }
+    }
 
     if (!activeClient) {
         return (
@@ -37,11 +73,9 @@ export default function DashboardPage() {
 
             <div className="flex items-center justify-between">
                 <div>
-                    {/* Header is cleaner as per reference, arguably Title is "Profile Summary" inside the content area but we keep Page Title */}
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Profile Summary</h1>
                 </div>
                 <div className="flex gap-2">
-                    {/* Reference has icons like 'Question', 'Settings'. Keeping our main actions but styling implies a clean top bar */}
                 </div>
             </div>
 
@@ -49,17 +83,14 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                     <TabsList className="bg-transparent p-0 gap-2">
                         <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Account Summary</TabsTrigger>
-                        <TabsTrigger value="report" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Report</TabsTrigger> {/* Visual Placeholder */}
+                        <TabsTrigger value="report" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Report</TabsTrigger>
                         <TabsTrigger value="profiles" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Competitors</TabsTrigger>
                         <TabsTrigger value="analyzed" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Analyzed Content</TabsTrigger>
                     </TabsList>
                 </div>
 
                 <TabsContent value="overview" className="space-y-6">
-                    {/* 1. Top Stats Row */}
                     <StatsCards />
-
-                    {/* 2. Middle Row: Growth & Active Hours */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[350px]">
                         <div className="lg:col-span-3 h-full">
                             <GrowthChart />
@@ -68,8 +99,6 @@ export default function DashboardPage() {
                             <ActiveHoursChart />
                         </div>
                     </div>
-
-                    {/* 3. Bottom Row: Demographics & Top Content */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <div className="lg:col-span-2 h-full">
                             <DemographicsChart />
@@ -107,7 +136,7 @@ export default function DashboardPage() {
                                     handle={profile.handle}
                                     platform={profile.platform as "instagram" | "tiktok" | "youtube"}
                                     tags={profile.tags || []}
-                                    avatarUrl={profile.avatar_url || undefined} // Fixed to match profile card prop if needed, or update interface
+                                    avatarUrl={profile.avatar_url || undefined}
                                 />
                             ))
                         )}
@@ -121,17 +150,23 @@ export default function DashboardPage() {
                 />
 
                 <TabsContent value="analyzed">
-                    <div className="grid gap-4 md:grid-cols-3">
-                        {activeClient.savedContent.length === 0 ? (
-                            <div className="col-span-full flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
-                                Use the Discovery tab to find and analyze content.
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                        {savedPosts.length === 0 ? (
+                            <div className="col-span-full flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground gap-4">
+                                <p>Use the Discovery tab to find and analyze content.</p>
                             </div>
                         ) : (
-                            activeClient.savedContent.map(content => (
-                                <div key={content.id} className="border p-4 rounded bg-card">
-                                    <h3 className="font-semibold truncate">{content.title}</h3>
-                                    <p className="text-xs text-muted-foreground">{content.platform} • {content.views} views</p>
-                                </div>
+                            savedPosts.map(post => (
+                                <ReelCard
+                                    key={post.id}
+                                    reel={post}
+                                    isSaved={true}
+                                    onRemove={handleRemoveSaved}
+                                    onPlay={(url) => {
+                                        setSelectedVideoUrl(url)
+                                        setVideoModalOpen(true)
+                                    }}
+                                />
                             ))
                         )}
                     </div>
@@ -143,6 +178,12 @@ export default function DashboardPage() {
                     </div>
                 </TabsContent>
             </Tabs>
+
+            <VideoModal
+                isOpen={videoModalOpen}
+                onClose={() => setVideoModalOpen(false)}
+                videoUrl={selectedVideoUrl}
+            />
         </div>
     )
 }

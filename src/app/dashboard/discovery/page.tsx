@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useStore } from "@/store/useStore"
-import { getScrapedPosts } from "@/app/actions/discovery"
+import { getScrapedPosts, savePost, removePost, getSavedPostIds } from "@/app/actions/discovery"
 import { WebhookReelData } from "@/app/actions/webhook"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,6 +11,7 @@ import { VideoModal } from "@/components/discovery/VideoModal"
 import { ReelCard } from "@/components/discovery/ReelCard"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
 export default function DiscoveryPage() {
     const { getActiveClient } = useStore()
@@ -18,6 +19,7 @@ export default function DiscoveryPage() {
 
     const [reels, setReels] = useState<WebhookReelData[]>([])
     const [filteredReels, setFilteredReels] = useState<WebhookReelData[]>([])
+    const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set())
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [platform, setPlatform] = useState<string>("all")
@@ -40,8 +42,16 @@ export default function DiscoveryPage() {
                 setLoading(true)
 
                 // Fetch reels from Database for the active client
-                const fetchedReels = await getScrapedPosts(activeClient.id)
+                // Parallel fetch for posts and saved status
+                const [fetchedReels, savedIds] = await Promise.all([
+                    getScrapedPosts(activeClient.id),
+                    getSavedPostIds(activeClient.id)
+                ])
+
                 console.log('[DiscoveryPage] Fetched reels:', fetchedReels.length)
+                console.log('[DiscoveryPage] Saved IDs:', savedIds)
+
+                setSavedPostIds(new Set(savedIds))
 
                 // Sort by view count descending
                 const sortedReels = fetchedReels.sort((a, b) => b.viewCount - a.viewCount)
@@ -78,6 +88,53 @@ export default function DiscoveryPage() {
 
         setFilteredReels(filtered)
     }, [searchQuery, platform, reels])
+
+    const handleSave = async (reel: WebhookReelData) => {
+        if (!activeClient) {
+            toast.error("Nenhum cliente selecionado")
+            return
+        }
+
+        try {
+            toast.loading("Salvando post...", { id: "save-post" })
+            const result = await savePost(activeClient.id, reel)
+
+            if (result.success) {
+                toast.success("Post salvo nos favoritos!", { id: "save-post" })
+                setSavedPostIds(prev => new Set(prev).add(reel.id))
+            } else {
+                toast.error("Erro ao salvar post", { id: "save-post" })
+            }
+        } catch (error) {
+            console.error("Save error:", error)
+            toast.error("Erro inesperado ao salvar", { id: "save-post" })
+        }
+    }
+
+    const handleRemove = async (reel: WebhookReelData) => {
+        if (!activeClient) {
+            return
+        }
+
+        try {
+            toast.loading("Removendo post...", { id: "remove-post" })
+            const result = await removePost(activeClient.id, reel.id)
+
+            if (result.success) {
+                toast.success("Post removido dos favoritos!", { id: "remove-post" })
+                setSavedPostIds(prev => {
+                    const next = new Set(prev)
+                    next.delete(reel.id)
+                    return next
+                })
+            } else {
+                toast.error("Erro ao remover post", { id: "remove-post" })
+            }
+        } catch (error) {
+            console.error("Remove error:", error)
+            toast.error("Erro inesperado ao remover", { id: "remove-post" })
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -167,6 +224,9 @@ export default function DiscoveryPage() {
                                 setSelectedVideoUrl(url)
                                 setModalOpen(true)
                             }}
+                            onSave={handleSave}
+                            onRemove={handleRemove}
+                            isSaved={savedPostIds.has(reel.id)}
                         />
                     ))}
                 </div>

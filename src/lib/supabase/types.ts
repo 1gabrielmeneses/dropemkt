@@ -9,7 +9,9 @@ export type Json =
 export type Database = {
     // Allows to automatically instantiate createClient with right options
     // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-
+    __InternalSupabase: {
+        PostgrestVersion: "14.1"
+    }
     public: {
         Tables: {
             calendar_events: {
@@ -18,7 +20,9 @@ export type Database = {
                     content_item_id: string | null
                     created_at: string
                     id: string
+                    marker_id: number | null
                     notes: string | null
+                    recurrence_group_id: string | null
                     scheduled_at: string
                     status: string
                 }
@@ -27,7 +31,9 @@ export type Database = {
                     content_item_id?: string | null
                     created_at?: string
                     id?: string
+                    marker_id?: number | null
                     notes?: string | null
+                    recurrence_group_id?: string | null
                     scheduled_at: string
                     status: string
                 }
@@ -36,7 +42,9 @@ export type Database = {
                     content_item_id?: string | null
                     created_at?: string
                     id?: string
+                    marker_id?: number | null
                     notes?: string | null
+                    recurrence_group_id?: string | null
                     scheduled_at?: string
                     status?: string
                 }
@@ -53,6 +61,13 @@ export type Database = {
                         columns: ["content_item_id"]
                         isOneToOne: false
                         referencedRelation: "content_items"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "calendar_events_marker_id_fkey"
+                        columns: ["marker_id"]
+                        isOneToOne: false
+                        referencedRelation: "content_markers"
                         referencedColumns: ["id"]
                     },
                 ]
@@ -89,6 +104,41 @@ export type Database = {
                     user_id?: string
                 }
                 Relationships: []
+            }
+            content_markers: {
+                Row: {
+                    client_id: string
+                    color: string
+                    created_at: string
+                    description: string | null
+                    id: number
+                    name: string
+                }
+                Insert: {
+                    client_id: string
+                    color: string
+                    created_at?: string
+                    description?: string | null
+                    id?: number
+                    name: string
+                }
+                Update: {
+                    client_id?: string
+                    color?: string
+                    created_at?: string
+                    description?: string | null
+                    id?: number
+                    name?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "content_markers_client_id_fkey"
+                        columns: ["client_id"]
+                        isOneToOne: false
+                        referencedRelation: "clients"
+                        referencedColumns: ["id"]
+                    },
+                ]
             }
             content_items: {
                 Row: {
@@ -166,79 +216,96 @@ export type Database = {
             }
             posts_salvos: {
                 Row: {
+                    client_id: string | null
                     created_at: string
                     id: number
                     legendaPost: string | null
+                    original_post_id: string | null
                     playCount: string | null
                     scriptUsado: string | null
+                    thumbnailurl: string | null
                     tipoPost: string | null
                     urlPost: string | null
                     viewCount: string | null
                 }
                 Insert: {
+                    client_id?: string | null
                     created_at?: string
                     id?: number
                     legendaPost?: string | null
+                    original_post_id?: string | null
                     playCount?: string | null
                     scriptUsado?: string | null
+                    thumbnailurl?: string | null
                     tipoPost?: string | null
                     urlPost?: string | null
                     viewCount?: string | null
                 }
                 Update: {
+                    client_id?: string | null
                     created_at?: string
                     id?: number
                     legendaPost?: string | null
+                    original_post_id?: string | null
                     playCount?: string | null
                     scriptUsado?: string | null
+                    thumbnailurl?: string | null
                     tipoPost?: string | null
                     urlPost?: string | null
                     viewCount?: string | null
                 }
-                Relationships: []
+                Relationships: [
+                    {
+                        foreignKeyName: "posts_salvos_client_id_fkey"
+                        columns: ["client_id"]
+                        isOneToOne: false
+                        referencedRelation: "clients"
+                        referencedColumns: ["id"]
+                    },
+                ]
             }
             posts_scaped: {
                 Row: {
-                    id: number
-                    created_at: string
                     cliente_conectado: string | null
-                    postId: string | null
-                    postCaption: string | null
-                    postUrl: string | null
                     commentsCount: number | null
+                    created_at: string
+                    displayUrl: string | null
+                    id: number
                     likesCount: number | null
+                    postCaption: string | null
+                    postId: string | null
+                    postUrl: string | null
                     timestamp: string | null
                     videoCount: number | null
                     videoPlayCount: number | null
-                    displayUrl: string | null
                 }
                 Insert: {
-                    id?: number
-                    created_at?: string
                     cliente_conectado?: string | null
-                    postId?: string | null
-                    postCaption?: string | null
-                    postUrl?: string | null
                     commentsCount?: number | null
+                    created_at?: string
+                    displayUrl?: string | null
+                    id?: number
                     likesCount?: number | null
+                    postCaption?: string | null
+                    postId?: string | null
+                    postUrl?: string | null
                     timestamp?: string | null
                     videoCount?: number | null
                     videoPlayCount?: number | null
-                    displayUrl?: string | null
                 }
                 Update: {
-                    id?: number
-                    created_at?: string
                     cliente_conectado?: string | null
-                    postId?: string | null
-                    postCaption?: string | null
-                    postUrl?: string | null
                     commentsCount?: number | null
+                    created_at?: string
+                    displayUrl?: string | null
+                    id?: number
                     likesCount?: number | null
+                    postCaption?: string | null
+                    postId?: string | null
+                    postUrl?: string | null
                     timestamp?: string | null
                     videoCount?: number | null
                     videoPlayCount?: number | null
-                    displayUrl?: string | null
                 }
                 Relationships: [
                     {
@@ -247,7 +314,7 @@ export type Database = {
                         isOneToOne: false
                         referencedRelation: "clients"
                         referencedColumns: ["id"]
-                    }
+                    },
                 ]
             }
             tracked_profiles: {
@@ -308,6 +375,7 @@ export type Database = {
 }
 
 type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = PublicSchema
 
 export type Tables<
     PublicTableNameOrOptions extends
@@ -400,6 +468,12 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
     ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-    : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+    public: {
+        Enums: {},
+    },
+} as const

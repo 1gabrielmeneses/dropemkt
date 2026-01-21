@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { WebhookReelData } from "@/app/actions/webhook"
-import { Play, Heart, MessageCircle, Eye } from "lucide-react"
+import { Play, Heart, MessageCircle } from "lucide-react"
 
 interface ReelCardProps {
     reel: WebhookReelData
     onSave?: (reel: WebhookReelData) => void
+    onRemove?: (reel: WebhookReelData) => void
     onPlay?: (url: string) => void
+    isSaved?: boolean
 }
 
-export function ReelCard({ reel, onSave, onPlay }: ReelCardProps) {
+export function ReelCard({ reel, onSave, onRemove, onPlay, isSaved = false }: ReelCardProps) {
     const [isHovered, setIsHovered] = useState(false)
     const [showCaptionModal, setShowCaptionModal] = useState(false)
 
@@ -43,20 +45,30 @@ export function ReelCard({ reel, onSave, onPlay }: ReelCardProps) {
     return (
         <>
             <Card
-                className="overflow-hidden cursor-pointer transition-all hover:shadow-lg group bg-card border-border"
+                className="overflow-hidden cursor-pointer transition-all hover:shadow-lg group bg-card border-border h-full flex flex-col"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
                 {/* Thumbnail with Play Button */}
                 <div className="relative aspect-[9/16] bg-muted" onClick={handleCardClick}>
-                    <img
-                        src={`/api/image-proxy?url=${encodeURIComponent(reel.displayUrl || reel.thumbnailUrl)}`}
-                        alt="Reel thumbnail"
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                    />
+                    {reel.displayUrl || reel.thumbnailUrl ? (
+                        <img
+                            src={`/api/image-proxy?url=${encodeURIComponent(reel.displayUrl || reel.thumbnailUrl || '')}`}
+                            alt="Reel thumbnail"
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement?.classList.add('fallback-icon');
+                            }}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
+                            <Play className="h-12 w-12 opacity-50" />
+                        </div>
+                    )}
 
-                    {/* Play Button */}
+                    {/* Play Button Overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className={`transition-all ${isHovered ? 'scale-110' : 'scale-100'}`}>
                             <div className="bg-black/40 backdrop-blur-sm rounded-full p-6">
@@ -80,7 +92,7 @@ export function ReelCard({ reel, onSave, onPlay }: ReelCardProps) {
                 </div>
 
                 {/* Content Below Image */}
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2 flex flex-col flex-1">
                     {/* Engagement Metrics */}
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -111,16 +123,21 @@ export function ReelCard({ reel, onSave, onPlay }: ReelCardProps) {
                         )}
                     </div>
 
-                    {/* Save Button */}
+                    {/* Save/Remove Button */}
                     <Button
                         size="sm"
-                        className="w-full"
+                        variant={isSaved ? "destructive" : "default"}
+                        className="w-full mt-auto"
                         onClick={(e) => {
                             e.stopPropagation()
-                            onSave?.(reel)
+                            if (isSaved) {
+                                onRemove?.(reel)
+                            } else {
+                                onSave?.(reel)
+                            }
                         }}
                     >
-                        Save for Analysis
+                        {isSaved ? "Remove from Favorites" : "Save for Analysis"}
                     </Button>
                 </div>
             </Card>
