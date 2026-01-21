@@ -1,0 +1,20 @@
+
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+
+export async function GET(request: Request) {
+    const supabase = await createClient()
+
+    // Check if we have a session
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (user) {
+        await supabase.auth.signOut()
+    }
+
+    revalidatePath('/', 'layout')
+    redirect('/login')
+}
