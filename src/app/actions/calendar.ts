@@ -215,3 +215,75 @@ export async function deleteCalendarEvent(eventId: string) {
         return { success: false, error }
     }
 }
+
+export async function updateEventRecurrence(
+    eventId: string,
+    recurrenceWeeks: number
+) {
+    const supabase = await createClient()
+
+    try {
+        // First, get the original event
+        const { data: originalEvent, error: fetchError } = await supabase
+            .from('calendar_events')
+            .select('*')
+            .eq('id', eventId)
+            .single()
+
+        if (fetchError || !originalEvent) {
+            console.error("[updateEventRecurrence] Error fetching event:", fetchError)
+            return { success: false, error: fetchError }
+        }
+
+        // If event already has recurrence, delete the old group first
+        if (originalEvent.recurrence_group_id) {
+            await supabase
+                .from('calendar_events')
+                .delete()
+                .eq('recurrence_group_id', originalEvent.recurrence_group_id)
+        } else {
+            // Delete the single event
+            await supabase
+                .from('calendar_events')
+                .delete()
+                .eq('id', eventId)
+        }
+
+        // Create new recurring series
+        const recurrenceGroupId = crypto.randomUUID()
+        const startDate = new Date(originalEvent.scheduled_at)
+        const eventsToInsert: any[] = []
+
+        const count = Math.min(recurrenceWeeks, 10) // Limit to 10 weeks
+
+        for (let i = 0; i < count; i++) {
+            const date = new Date(startDate)
+            date.setDate(startDate.getDate() + (i * 7))
+
+            eventsToInsert.push({
+                client_id: originalEvent.client_id,
+                scheduled_at: date.toISOString(),
+                marker_id: originalEvent.marker_id,
+                content_item_id: originalEvent.content_item_id,
+                status: originalEvent.status,
+                notes: originalEvent.notes,
+                recurrence_group_id: recurrenceGroupId
+            })
+        }
+
+        const { data, error } = await supabase
+            .from('calendar_events')
+            .insert(eventsToInsert)
+            .select()
+
+        if (error) {
+            console.error("[updateEventRecurrence] Error creating recurring events:", error)
+            return { success: false, error }
+        }
+
+        return { success: true, events: data }
+    } catch (error) {
+        console.error("[updateEventRecurrence] Unexpected error:", error)
+        return { success: false, error }
+    }
+}

@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { createMarker, getMarkers, updateMarker, deleteMarker, Marker, createCalendarEvent, getCalendarEvents, deleteCalendarEvent } from "@/app/actions/calendar"
+import { createMarker, getMarkers, updateMarker, deleteMarker, Marker, createCalendarEvent, getCalendarEvents, deleteCalendarEvent, updateEventRecurrence } from "@/app/actions/calendar"
 import { toast } from "sonner"
 import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 
@@ -76,7 +76,13 @@ function DraggableMarker({ marker, onClick, onEdit, onDelete }: { marker: Marker
     )
 }
 
-function CalendarDay({ day, currentDate, events, onDeleteEvent }: { day: Date, currentDate: Date, events: CalendarEvent[], onDeleteEvent: (id: string) => void }) {
+function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent }: {
+    day: Date,
+    currentDate: Date,
+    events: CalendarEvent[],
+    onDeleteEvent: (id: string) => void,
+    onEditEvent: (event: CalendarEvent) => void
+}) {
     const dateStr = format(day, 'yyyy-MM-dd');
     const { setNodeRef, isOver } = useDroppable({
         id: dateStr,
@@ -115,16 +121,28 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent }: { day: Date, c
                         <p className="font-semibold text-slate-800 line-clamp-2 leading-tight">
                             {event.marker?.name || 'Event'}
                         </p>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteEvent(event.id);
-                            }}
-                            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/event:opacity-100 transition-opacity shadow-sm hover:scale-110"
-                        >
-                            <span className="sr-only">Delete</span>
-                            <span className="h-3 w-3 flex items-center justify-center text-[10px]">&times;</span>
-                        </button>
+                        <div className="absolute -top-1 -right-1 flex gap-0.5 opacity-0 group-hover/event:opacity-100 transition-opacity">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditEvent(event);
+                                }}
+                                className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
+                                title="Editar recorrência"
+                            >
+                                <Pencil className="h-2 w-2" />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteEvent(event.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
+                                title="Deletar"
+                            >
+                                <span className="h-3 w-3 flex items-center justify-center text-[10px]">&times;</span>
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -152,11 +170,14 @@ export default function CalendarPage() {
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
     const [activeDragItem, setActiveDragItem] = useState<Marker | null>(null)
 
-    // Recurrence State
-    const [isRecurrenceDialogOpen, setIsRecurrenceDialogOpen] = useState(false)
-    const [pendingDrop, setPendingDrop] = useState<{ dateStr: string, marker: Marker } | null>(null)
-    const [recurrenceType, setRecurrenceType] = useState<'none' | 'weeks'>('none')
-    const [recurrenceWeeks, setRecurrenceWeeks] = useState(1)
+    // Event Recurrence Edit State
+    const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false)
+    const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
+    const [editEventWeeks, setEditEventWeeks] = useState(1)
+
+    // Delete Confirmation State
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+    const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null)
 
     // Fallback if no client selected
     const savedContent = activeClient?.savedContent || []
@@ -239,51 +260,80 @@ export default function CalendarPage() {
 
         if (active.data.current?.type === 'marker-source') {
             const marker = active.data.current.marker as Marker;
-            setPendingDrop({ dateStr, marker })
-            setRecurrenceType('none')
-            setRecurrenceWeeks(1)
-            setIsRecurrenceDialogOpen(true)
+
+            // Optimistic update
+            const tempId = `temp-${Date.now()}`;
+            const optimisticEvent: any = {
+                id: tempId,
+                client_id: activeClient.id,
+                scheduled_at: dateStr,
+                marker_id: marker.id,
+                content_item_id: null,
+                status: 'scheduled',
+                created_at: new Date().toISOString(),
+                notes: null,
+                marker: marker,
+                content_item: null
+            };
+
+            setCalendarEvents(prev => [...prev, optimisticEvent]);
+
+            // Construct date at noon local time to avoid timezone issues
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const localDate = new Date(year, month - 1, day, 12, 0, 0);
+
+            const result = await createCalendarEvent(activeClient.id, localDate.toISOString(), marker.id);
+
+            if (result.success && result.events) {
+                const freshEvents = await getCalendarEvents(activeClient.id) || []
+                setCalendarEvents(freshEvents as CalendarEvent[])
+                toast.success("Marcador agendado!");
+            } else {
+                setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
+                toast.error("Erro ao agendar marcador");
+            }
         }
     }
 
-    const confirmDrop = async () => {
-        if (!pendingDrop || !activeClient) return
+    const handleEditEvent = (event: CalendarEvent) => {
+        setEditingEvent(event)
+        setEditEventWeeks(1)
+        setIsEditEventDialogOpen(true)
+    }
 
-        setIsRecurrenceDialogOpen(false)
-        const { dateStr, marker } = pendingDrop
-        const recurrenceOptions = { type: recurrenceType, count: recurrenceType === 'weeks' ? Number(recurrenceWeeks) : undefined }
+    const handleUpdateEventRecurrence = async () => {
+        if (!editingEvent || !activeClient) return
 
-        // Optimistic update for single event (simplification)
-        const tempId = `temp-${Date.now()}`;
-        const optimisticEvent: any = { // Partial CalendarEvent
-            id: tempId,
-            client_id: activeClient.id,
-            scheduled_at: dateStr,
-            marker_id: marker.id,
-            content_item_id: null,
-            status: 'scheduled',
-            created_at: new Date().toISOString(),
-            notes: null,
-            marker: marker,
-            content_item: null
-        };
-        setCalendarEvents(prev => [...prev, optimisticEvent]);
+        setIsEditEventDialogOpen(false)
 
-        const utcDate = new Date(dateStr)
-        const result = await createCalendarEvent(activeClient.id, utcDate.toISOString(), marker.id, undefined, undefined, recurrenceOptions);
+        const result = await updateEventRecurrence(editingEvent.id, editEventWeeks)
 
-        if (result.success && result.events) {
+        if (result.success) {
             const freshEvents = await getCalendarEvents(activeClient.id) || []
             setCalendarEvents(freshEvents as CalendarEvent[])
-            toast.success("Agendado com sucesso!");
+            toast.success("Recorrência configurada!")
         } else {
-            setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
-            toast.error("Erro ao agendar");
+            toast.error("Erro ao configurar recorrência")
         }
-        setPendingDrop(null)
+
+        setEditingEvent(null)
     }
 
     const handleDeleteEvent = async (eventId: string) => {
+        const eventToDelete = calendarEvents.find(e => e.id === eventId)
+        if (!eventToDelete) return
+
+        // If event has recurrence, show confirmation dialog
+        if (eventToDelete.recurrence_group_id) {
+            setEventToDelete(eventToDelete)
+            setIsDeleteConfirmOpen(true)
+        } else {
+            // Delete immediately for single events
+            await performDelete(eventId)
+        }
+    }
+
+    const performDelete = async (eventId: string) => {
         const prevEvents = [...calendarEvents];
         const eventToDelete = calendarEvents.find(e => e.id === eventId)
         if (!eventToDelete) return
@@ -301,6 +351,13 @@ export default function CalendarPage() {
         } else {
             toast.success("Removido do calendário");
         }
+    }
+
+    const confirmDelete = async () => {
+        if (!eventToDelete) return
+        setIsDeleteConfirmOpen(false)
+        await performDelete(eventToDelete.id)
+        setEventToDelete(null)
     }
 
     const monthStart = startOfMonth(currentDate)
@@ -359,6 +416,7 @@ export default function CalendarPage() {
                                     currentDate={currentDate}
                                     events={calendarEvents.filter(e => isSameDay(parseISO(e.scheduled_at), day))}
                                     onDeleteEvent={handleDeleteEvent}
+                                    onEditEvent={handleEditEvent}
                                 />
                             ))}
                         </div>
@@ -470,60 +528,56 @@ export default function CalendarPage() {
                 </div>
             </div>
 
-            <Dialog open={isRecurrenceDialogOpen} onOpenChange={setIsRecurrenceDialogOpen}>
+            <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Agendar Marcador</DialogTitle>
+                        <DialogTitle>Confirmar Exclusão</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground">
+                            Este marcador possui recorrência. Tem certeza que deseja excluir <strong>todas as ocorrências</strong> deste marcador?
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>Cancelar</Button>
+                        <Button variant="destructive" onClick={confirmDelete}>Excluir Todas</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditEventDialogOpen} onOpenChange={setIsEditEventDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Configurar Recorrência</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Label className="min-w-24">Tipo:</Label>
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant={recurrenceType === 'none' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setRecurrenceType('none')}
-                                    >
-                                        Uma vez
-                                    </Button>
-                                    <Button
-                                        variant={recurrenceType === 'weeks' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setRecurrenceType('weeks')}
-                                    >
-                                        Recorrente
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {recurrenceType === 'weeks' && (
-                                <div className="flex items-center gap-2">
-                                    <Label className="min-w-24">Semanas:</Label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={10}
-                                        value={recurrenceWeeks}
-                                        onChange={(e) => {
-                                            const val = Number(e.target.value)
-                                            if (val <= 10 && val >= 1) setRecurrenceWeeks(val)
-                                        }}
-                                        className="w-24"
-                                    />
-                                    <span className="text-xs text-muted-foreground">(Máx. 10)</span>
-                                </div>
-                            )}
-
                             <p className="text-sm text-muted-foreground">
-                                {recurrenceType === 'none' && "Agendar apenas para este dia."}
-                                {recurrenceType === 'weeks' && `Repetir por ${recurrenceWeeks} semanas neste dia da semana.`}
+                                Defina por quantas semanas este marcador deve se repetir.
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Label className="min-w-24">Semanas:</Label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={10}
+                                    value={editEventWeeks}
+                                    onChange={(e) => {
+                                        const val = Number(e.target.value)
+                                        if (val <= 10 && val >= 1) setEditEventWeeks(val)
+                                    }}
+                                    className="w-24"
+                                />
+                                <span className="text-xs text-muted-foreground">(Máx. 10)</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {`Repetir por ${editEventWeeks} semanas neste dia da semana.`}
                             </p>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsRecurrenceDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={confirmDrop}>Confirmar</Button>
+                        <Button variant="outline" onClick={() => setIsEditEventDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleUpdateEventRecurrence}>Confirmar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
