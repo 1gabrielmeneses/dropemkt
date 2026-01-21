@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useStore } from "@/store/useStore"
-import { fetchReelsFromWebhook, WebhookReelData } from "@/app/actions/webhook"
+import { getScrapedPosts } from "@/app/actions/discovery"
+import { WebhookReelData } from "@/app/actions/webhook"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Loader2 } from "lucide-react"
+import { VideoModal } from "@/components/discovery/VideoModal"
 import { ReelCard } from "@/components/discovery/ReelCard"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -21,55 +23,34 @@ export default function DiscoveryPage() {
     const [platform, setPlatform] = useState<string>("all")
     const [matchContext, setMatchContext] = useState(true)
 
+    const [modalOpen, setModalOpen] = useState(false)
+    const [selectedVideoUrl, setSelectedVideoUrl] = useState("")
+
     useEffect(() => {
         async function loadReels() {
             if (!activeClient) {
+                console.log('[DiscoveryPage] No active client')
                 setLoading(false)
                 return
             }
 
+            console.log('[DiscoveryPage] Loading reels for client:', activeClient.id, activeClient.name)
+
             try {
                 setLoading(true)
 
-                // Get all competitor profiles from active client
-                const profiles = activeClient.profiles || []
-                const competitors = profiles.filter((p: any) =>
-                    p.tags?.includes("Competitor") || p.tags?.includes("AI Discovery")
-                )
-
-                if (competitors.length === 0) {
-                    setReels([])
-                    setFilteredReels([])
-                    setLoading(false)
-                    return
-                }
-
-                // Extract usernames
-                const usernames = competitors.map((c: any) => c.handle).filter(Boolean)
-
-                console.log("Fetching reels for usernames:", usernames)
-
-                // Fetch reels from webhook
-                const fetchedReels = await fetchReelsFromWebhook(usernames)
-
-                console.log("Fetched reels:", fetchedReels)
-
-                // Filter to last 4 days
-                const fourDaysAgo = new Date()
-                fourDaysAgo.setDate(fourDaysAgo.getDate() - 4)
-
-                const recentReels = fetchedReels.filter((reel: any) => {
-                    const reelDate = new Date(reel.timestamp)
-                    return reelDate >= fourDaysAgo
-                })
+                // Fetch reels from Database for the active client
+                const fetchedReels = await getScrapedPosts(activeClient.id)
+                console.log('[DiscoveryPage] Fetched reels:', fetchedReels.length)
 
                 // Sort by view count descending
-                const sortedReels = recentReels.sort((a: any, b: any) => b.viewCount - a.viewCount)
+                const sortedReels = fetchedReels.sort((a, b) => b.viewCount - a.viewCount)
+                console.log('[DiscoveryPage] Sorted reels:', sortedReels.length)
 
                 setReels(sortedReels)
                 setFilteredReels(sortedReels)
             } catch (error) {
-                console.error("Error loading reels:", error)
+                console.error("[DiscoveryPage] Error loading reels:", error)
             } finally {
                 setLoading(false)
             }
@@ -179,10 +160,23 @@ export default function DiscoveryPage() {
             {!loading && filteredReels.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {filteredReels.map((reel) => (
-                        <ReelCard key={reel.id} reel={reel} />
+                        <ReelCard
+                            key={reel.id}
+                            reel={reel}
+                            onPlay={(url) => {
+                                setSelectedVideoUrl(url)
+                                setModalOpen(true)
+                            }}
+                        />
                     ))}
                 </div>
             )}
+
+            <VideoModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                videoUrl={selectedVideoUrl}
+            />
         </div>
     )
 }

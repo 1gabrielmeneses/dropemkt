@@ -1,19 +1,22 @@
 "use client"
 
-import { WebhookReelData } from "@/app/actions/webhook"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Heart, MessageCircle, Play } from "lucide-react"
-import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { WebhookReelData } from "@/app/actions/webhook"
+import { Play, Heart, MessageCircle, Eye } from "lucide-react"
 
 interface ReelCardProps {
     reel: WebhookReelData
     onSave?: (reel: WebhookReelData) => void
+    onPlay?: (url: string) => void
 }
 
-export function ReelCard({ reel, onSave }: ReelCardProps) {
+export function ReelCard({ reel, onSave, onPlay }: ReelCardProps) {
     const [isHovered, setIsHovered] = useState(false)
+    const [showCaptionModal, setShowCaptionModal] = useState(false)
 
     const formatCount = (count: number): string => {
         if (count >= 1000000) {
@@ -24,86 +27,118 @@ export function ReelCard({ reel, onSave }: ReelCardProps) {
         return count.toString()
     }
 
+    const truncateCaption = (text: string, maxLength: number = 80) => {
+        if (text.length <= maxLength) return text
+        return text.substring(0, maxLength) + "..."
+    }
+
     const handleCardClick = () => {
-        // Open video in new tab or modal
-        if (reel.videoUrl) {
+        if (onPlay && reel.videoUrl) {
+            onPlay(reel.videoUrl)
+        } else if (reel.videoUrl) {
             window.open(reel.videoUrl, '_blank')
         }
     }
 
     return (
-        <Card
-            className="overflow-hidden cursor-pointer transition-all hover:shadow-lg group"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={handleCardClick}
-        >
-            {/* Thumbnail */}
-            <div className="relative aspect-[9/16] bg-muted">
-                <img
-                    src={reel.thumbnailUrl}
-                    alt={reel.caption}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                />
+        <>
+            <Card
+                className="overflow-hidden cursor-pointer transition-all hover:shadow-lg group bg-card border-border"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                {/* Thumbnail with Play Button */}
+                <div className="relative aspect-[9/16] bg-muted" onClick={handleCardClick}>
+                    <img
+                        src={reel.displayUrl || reel.thumbnailUrl}
+                        alt={reel.caption}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                    />
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                {/* Play Icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className={`transition-all ${isHovered ? 'scale-110' : 'scale-100'}`}>
-                        <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
-                            <Play className="h-8 w-8 text-white fill-white" />
+                    {/* Play Button with View Count */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className={`transition-all ${isHovered ? 'scale-110' : 'scale-100'}`}>
+                            <div className="bg-black/40 backdrop-blur-sm rounded-full p-6">
+                                <Play className="h-8 w-8 text-white fill-white" />
+                            </div>
                         </div>
+                    </div>
+
+                    {/* View Count Badge (bottom left) */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded px-2 py-1">
+                        <Play className="h-3 w-3 text-white fill-white" />
+                        <span className="text-white text-xs font-medium">{formatCount(reel.viewCount)}</span>
+                    </div>
+
+                    {/* Platform Badge (top left) */}
+                    <div className="absolute top-2 left-2">
+                        <Badge className="bg-primary/90 text-primary-foreground capitalize text-xs">
+                            {reel.platform}
+                        </Badge>
                     </div>
                 </div>
 
-                {/* Platform Badge */}
-                <div className="absolute top-2 left-2">
-                    <Badge className="bg-primary text-primary-foreground capitalize">
-                        {reel.platform}
-                    </Badge>
-                </div>
-
-                {/* Engagement Metrics */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                    <div className="flex items-center gap-3 text-white text-sm">
-                        <div className="flex items-center gap-1">
-                            <Eye className="h-4 w-4" />
-                            <span className="font-medium">{formatCount(reel.viewCount)}</span>
-                        </div>
+                {/* Content Below Image */}
+                <div className="p-3 space-y-2">
+                    {/* Engagement Metrics */}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                             <Heart className="h-4 w-4" />
-                            <span className="font-medium">{formatCount(reel.likeCount)}</span>
+                            <span>{formatCount(reel.likeCount)}</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <MessageCircle className="h-4 w-4" />
-                            <span className="font-medium">{formatCount(reel.commentCount)}</span>
+                            <span>{formatCount(reel.commentCount)}</span>
                         </div>
                     </div>
 
-                    {/* Username and Caption */}
-                    <div className="text-white space-y-1">
-                        <p className="text-xs font-semibold">@{reel.username}</p>
-                        <p className="text-xs line-clamp-2 opacity-90">{reel.caption}</p>
+                    {/* Caption with "ver mais" */}
+                    <div className="space-y-1">
+                        <p className="text-sm text-foreground line-clamp-2">
+                            {truncateCaption(reel.caption, 80)}
+                        </p>
+                        {reel.caption.length > 80 && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowCaptionModal(true)
+                                }}
+                                className="text-xs text-primary hover:underline"
+                            >
+                                ver mais...
+                            </button>
+                        )}
                     </div>
-                </div>
-            </div>
 
-            {/* Save Button */}
-            <div className="p-3">
-                <Button
-                    size="sm"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onSave?.(reel)
-                    }}
-                >
-                    Save for Analysis
-                </Button>
-            </div>
-        </Card>
+                    {/* Save Button */}
+                    <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onSave?.(reel)
+                        }}
+                    >
+                        Save for Analysis
+                    </Button>
+                </div>
+            </Card>
+
+            {/* Caption Modal */}
+            <Dialog open={showCaptionModal} onOpenChange={setShowCaptionModal}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Caption</DialogTitle>
+                    </DialogHeader>
+                    <div className="max-h-96 overflow-y-auto">
+                        <p className="text-sm whitespace-pre-wrap">{reel.caption}</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }

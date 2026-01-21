@@ -11,6 +11,7 @@ export interface WebhookReelData {
     videoUrl: string
     thumbnailUrl: string
     platform: 'instagram' | 'tiktok'
+    displayUrl?: string
 }
 
 export async function fetchReelsFromWebhook(usernames: string[]): Promise<WebhookReelData[]> {
@@ -34,19 +35,17 @@ export async function fetchReelsFromWebhook(usernames: string[]): Promise<Webhoo
         const data = await response.json()
 
         // Map the webhook response to our ReelData format
-        // Adjust field mappings based on actual webhook response structure
         const reels: WebhookReelData[] = data.map((item: any) => ({
-            id: item.id || item.shortcode || item.pk || `${item.username}_${Date.now()}`,
-            username: item.username || item.owner?.username || '',
-            caption: item.caption?.text || item.caption || '',
-            timestamp: item.taken_at_timestamp
-                ? new Date(item.taken_at_timestamp * 1000).toISOString()
-                : item.timestamp || new Date().toISOString(),
-            viewCount: item.video_view_count || item.play_count || item.view_count || 0,
-            likeCount: item.like_count || item.likes || 0,
-            commentCount: item.comment_count || item.comments || 0,
-            videoUrl: item.video_url || item.video_versions?.[0]?.url || item.display_url || '',
-            thumbnailUrl: item.thumbnail_url || item.display_url || item.image_versions2?.candidates?.[0]?.url || '',
+            id: item.id || item.shortcode || `${Date.now()}_${Math.random()}`,
+            username: item.username || 'Unknown', // n8n sample doesn't show username, fallback
+            caption: item.caption || '',
+            timestamp: item.timestamp || new Date().toISOString(),
+            viewCount: item.videoPlayCount || item.videoViewCount || item.viewCount || 0,
+            likeCount: item.likesCount || item.likeCount || 0,
+            commentCount: item.commentsCount || item.commentCount || 0,
+            videoUrl: item.url || item.videoUrl || '', // 'url' in sample is permalink
+            thumbnailUrl: item.displayUrl || item.thumbnailUrl || '', // 'displayUrl' in sample
+            displayUrl: item.displayUrl,
             platform: 'instagram' as const
         }))
 

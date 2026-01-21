@@ -197,6 +197,59 @@ export type Database = {
                 }
                 Relationships: []
             }
+            posts_scaped: {
+                Row: {
+                    id: number
+                    created_at: string
+                    cliente_conectado: string | null
+                    postId: string | null
+                    postCaption: string | null
+                    postUrl: string | null
+                    commentsCount: number | null
+                    likesCount: number | null
+                    timestamp: string | null
+                    videoCount: number | null
+                    videoPlayCount: number | null
+                    displayUrl: string | null
+                }
+                Insert: {
+                    id?: number
+                    created_at?: string
+                    cliente_conectado?: string | null
+                    postId?: string | null
+                    postCaption?: string | null
+                    postUrl?: string | null
+                    commentsCount?: number | null
+                    likesCount?: number | null
+                    timestamp?: string | null
+                    videoCount?: number | null
+                    videoPlayCount?: number | null
+                    displayUrl?: string | null
+                }
+                Update: {
+                    id?: number
+                    created_at?: string
+                    cliente_conectado?: string | null
+                    postId?: string | null
+                    postCaption?: string | null
+                    postUrl?: string | null
+                    commentsCount?: number | null
+                    likesCount?: number | null
+                    timestamp?: string | null
+                    videoCount?: number | null
+                    videoPlayCount?: number | null
+                    displayUrl?: string | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "posts_scaped_cliente_conectado_fkey"
+                        columns: ["cliente_conectado"]
+                        isOneToOne: false
+                        referencedRelation: "clients"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
             tracked_profiles: {
                 Row: {
                     avatar_url: string | null
