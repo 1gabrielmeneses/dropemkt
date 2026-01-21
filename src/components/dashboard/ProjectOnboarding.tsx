@@ -10,7 +10,8 @@ import { useStore } from "@/store/useStore"
 import { Loader2 } from "lucide-react"
 
 export function ProjectOnboarding() {
-    const { isConfigured, setProject } = useStore()
+    const { clients, addClient } = useStore()
+    const isConfigured = clients.length > 0
     const [open, setOpen] = useState(false)
 
     const [step, setStep] = useState(1) // 1: Input, 2: AI Processing, 3: Confirmation
@@ -31,8 +32,8 @@ export function ProjectOnboarding() {
         }, 2000)
     }
 
-    const handleConfirm = () => {
-        setProject(name, brief)
+    const handleConfirm = async () => {
+        await addClient(name, brief)
         setOpen(false)
     }
 
@@ -60,9 +61,8 @@ export function ProjectOnboarding() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="brief">Briefing / Goals</Label>
-                            <textarea
+                            <Textarea
                                 id="brief"
-                                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 placeholder="We want to analyze competitors in the sustainable lifestyle niche on TikTok..."
                                 value={brief}
                                 onChange={(e) => setBrief(e.target.value)}

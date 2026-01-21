@@ -11,8 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 
 export default function DiscoveryPage() {
-    const { profiles, getActiveClient } = useStore()
+    const { getActiveClient } = useStore()
     const activeClient = getActiveClient()
+    const profiles = activeClient?.profiles || []
 
     const [reels, setReels] = useState<ReelData[]>([])
     const [filteredReels, setFilteredReels] = useState<ReelData[]>([])

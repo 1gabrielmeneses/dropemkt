@@ -103,10 +103,10 @@ export default function DashboardPage() {
                             activeClient.profiles.map((profile) => (
                                 <ProfileCard
                                     key={profile.id}
-                                    name={profile.name}
+                                    name={profile.name || ""}
                                     handle={profile.handle}
                                     platform={profile.platform as "instagram" | "tiktok" | "youtube"}
-                                    tags={profile.tags}
+                                    tags={profile.tags || []}
                                     avatarUrl={profile.avatar_url || undefined} // Fixed to match profile card prop if needed, or update interface
                                 />
                             ))
