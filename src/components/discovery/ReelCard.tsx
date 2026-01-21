@@ -50,16 +50,13 @@ export function ReelCard({ reel, onSave, onPlay }: ReelCardProps) {
                 {/* Thumbnail with Play Button */}
                 <div className="relative aspect-[9/16] bg-muted" onClick={handleCardClick}>
                     <img
-                        src={reel.displayUrl || reel.thumbnailUrl}
-                        alt={reel.caption}
+                        src={`/api/image-proxy?url=${encodeURIComponent(reel.displayUrl || reel.thumbnailUrl)}`}
+                        alt="Reel thumbnail"
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                     />
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                    {/* Play Button with View Count */}
+                    {/* Play Button */}
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className={`transition-all ${isHovered ? 'scale-110' : 'scale-100'}`}>
                             <div className="bg-black/40 backdrop-blur-sm rounded-full p-6">
