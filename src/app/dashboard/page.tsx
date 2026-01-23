@@ -20,7 +20,7 @@ import { VideoModal } from "@/components/discovery/VideoModal"
 import { toast } from "sonner"
 
 export default function DashboardPage() {
-    const { getActiveClient } = useStore()
+    const { getActiveClient, removeProfile } = useStore()
     const activeClient = getActiveClient()
     const [addProfileOpen, setAddProfileOpen] = useState(false)
     const [discoveryOpen, setDiscoveryOpen] = useState(false)
@@ -56,6 +56,18 @@ export default function DashboardPage() {
         }
     }
 
+
+    const handleDeleteProfile = async (id: string) => {
+        if (!activeClient) return
+        try {
+            toast.loading("Removendo competidor...", { id: "remove-profile" })
+            await removeProfile(id)
+            toast.success("Competidor removido!", { id: "remove-profile" })
+        } catch (error) {
+            toast.error("Erro ao remover competidor", { id: "remove-profile" })
+        }
+    }
+
     if (!activeClient) {
         return (
             <div className="flex h-[50vh] items-center justify-center">
@@ -83,7 +95,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                     <TabsList className="bg-transparent p-0 gap-2">
                         <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Account Summary</TabsTrigger>
-                        <TabsTrigger value="report" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Report</TabsTrigger>
+
                         <TabsTrigger value="profiles" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Competitors</TabsTrigger>
                         <TabsTrigger value="analyzed" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Analyzed Content</TabsTrigger>
                     </TabsList>
@@ -132,11 +144,13 @@ export default function DashboardPage() {
                             activeClient.profiles.map((profile) => (
                                 <ProfileCard
                                     key={profile.id}
+                                    id={profile.id}
                                     name={profile.name || ""}
                                     handle={profile.handle}
                                     platform={profile.platform as "instagram" | "tiktok" | "youtube"}
                                     tags={profile.tags || []}
                                     avatarUrl={profile.avatar_url || undefined}
+                                    onDelete={handleDeleteProfile}
                                 />
                             ))
                         )}
@@ -172,11 +186,7 @@ export default function DashboardPage() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="report">
-                    <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
-                        Report generation module coming soon.
-                    </div>
-                </TabsContent>
+
             </Tabs>
 
             <VideoModal

@@ -437,27 +437,37 @@ export default function CalendarPage() {
                                         <TabsTrigger value="marcadores">Marcadores</TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="conteudo" className="flex-1 space-y-3 mt-0">
+                                    <TabsContent value="conteudo" className="flex-1 mt-0">
                                         {savedContent.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center h-full text-center p-4">
                                                 <p className="text-sm text-muted-foreground">
-                                                    No content ready.
+                                                    Nenhum conteúdo salvo.
                                                     <br />
-                                                    Head to Discovery to find ideas.
+                                                    Vá para Discovery para salvar ideias.
                                                 </p>
                                             </div>
                                         ) : (
-                                            savedContent.map(content => (
-                                                <div key={content.id} className="group p-3 border rounded-lg bg-card shadow-sm hover:shadow-md transition-all cursor-move flex gap-3 items-start select-none">
-                                                    <GripVertical className="h-4 w-4 text-muted-foreground mt-1 opacity-50 group-hover:opacity-100" />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-sm line-clamp-2 leading-tight mb-1">{content.title}</p>
-                                                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                                            {content.platform} • {content.views} views
-                                                        </p>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {savedContent.map(content => (
+                                                    <div key={content.id} className="group p-3 border rounded-lg bg-card shadow-sm hover:shadow-md transition-all cursor-move flex flex-col gap-2 select-none">
+                                                        {content.thumbnail_url && (
+                                                            <div className="w-full aspect-video rounded overflow-hidden bg-muted">
+                                                                <img
+                                                                    src={content.thumbnail_url}
+                                                                    alt={content.title || 'Content'}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-sm line-clamp-2 leading-tight mb-1">{content.title}</p>
+                                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                                                {content.platform} • {content.views?.toLocaleString()} views
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))
+                                                ))}
+                                            </div>
                                         )}
                                     </TabsContent>
 

@@ -28,6 +28,7 @@ interface AppState {
     saveContent: (content: Omit<ContentItemRow, 'id' | 'created_at' | 'client_id'>) => Promise<void>
     addToCalendar: (event: Omit<CalendarEventRow, 'id' | 'created_at' | 'client_id'>) => Promise<void>
     enrichClient: (clientId: string, instagramUsername: string, clientName: string) => Promise<void>
+    removeProfile: (profileId: string) => Promise<void>
 
     updateClient: (id: string, updates: Partial<ClientRow>) => Promise<void>
     deleteClient: (id: string) => Promise<void>
@@ -126,6 +127,30 @@ export const useStore = create<AppState>((set, get) => ({
             clients: state.clients.map(c =>
                 c.id === activeClientId
                     ? { ...c, profiles: [...c.profiles, data] }
+                    : c
+            )
+        }))
+    },
+
+    removeProfile: async (profileId) => {
+        const state = get()
+        const activeClientId = state.activeClientId
+        if (!activeClientId) return
+
+        const { error } = await supabase
+            .from('tracked_profiles')
+            .delete()
+            .eq('id', profileId)
+
+        if (error) {
+            console.error("Error deleting profile", error)
+            return
+        }
+
+        set((state) => ({
+            clients: state.clients.map(c =>
+                c.id === activeClientId
+                    ? { ...c, profiles: c.profiles.filter(p => p.id !== profileId) }
                     : c
             )
         }))

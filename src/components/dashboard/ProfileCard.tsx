@@ -2,17 +2,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, MoreHorizontal } from "lucide-react"
+import { ExternalLink, MoreHorizontal, Trash2 } from "lucide-react"
 
 interface ProfileCardProps {
+    id: string;
     handle: string
     name: string
     avatarUrl?: string
     platform: "tiktok" | "instagram" | "youtube"
     tags: string[]
+    onDelete?: (id: string) => void
 }
 
-export function ProfileCard({ handle, name, avatarUrl, platform, tags }: ProfileCardProps) {
+export function ProfileCard({ id, handle, name, avatarUrl, platform, tags, onDelete }: ProfileCardProps) {
     return (
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
             <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
@@ -26,9 +28,21 @@ export function ProfileCard({ handle, name, avatarUrl, platform, tags }: Profile
                         <div className="text-xs text-muted-foreground">{handle}</div>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                    {onDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => onDelete(id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="p-4 pt-2">
                 <div className="flex flex-wrap gap-1 mb-4">

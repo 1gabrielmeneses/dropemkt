@@ -105,41 +105,6 @@ export type Database = {
                 }
                 Relationships: []
             }
-            content_markers: {
-                Row: {
-                    client_id: string
-                    color: string
-                    created_at: string
-                    description: string | null
-                    id: number
-                    name: string
-                }
-                Insert: {
-                    client_id: string
-                    color: string
-                    created_at?: string
-                    description?: string | null
-                    id?: number
-                    name: string
-                }
-                Update: {
-                    client_id?: string
-                    color?: string
-                    created_at?: string
-                    description?: string | null
-                    id?: number
-                    name?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "content_markers_client_id_fkey"
-                        columns: ["client_id"]
-                        isOneToOne: false
-                        referencedRelation: "clients"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
             content_items: {
                 Row: {
                     client_id: string
@@ -190,6 +155,41 @@ export type Database = {
                     },
                 ]
             }
+            content_markers: {
+                Row: {
+                    client_id: string
+                    color: string
+                    created_at: string
+                    description: string | null
+                    id: number
+                    name: string
+                }
+                Insert: {
+                    client_id: string
+                    color: string
+                    created_at?: string
+                    description?: string | null
+                    id?: number
+                    name: string
+                }
+                Update: {
+                    client_id?: string
+                    color?: string
+                    created_at?: string
+                    description?: string | null
+                    id?: number
+                    name?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "content_markers_client_id_fkey"
+                        columns: ["client_id"]
+                        isOneToOne: false
+                        referencedRelation: "clients"
+                        referencedColumns: ["id"]
+                    },
+                ]
+            }
             perfis_selecionados: {
                 Row: {
                     created_at: string
@@ -217,9 +217,11 @@ export type Database = {
             posts_salvos: {
                 Row: {
                     client_id: string | null
+                    commentsCount: number | null
                     created_at: string
                     id: number
                     legendaPost: string | null
+                    likesCount: number | null
                     original_post_id: string | null
                     playCount: string | null
                     scriptUsado: string | null
@@ -230,9 +232,11 @@ export type Database = {
                 }
                 Insert: {
                     client_id?: string | null
+                    commentsCount?: number | null
                     created_at?: string
                     id?: number
                     legendaPost?: string | null
+                    likesCount?: number | null
                     original_post_id?: string | null
                     playCount?: string | null
                     scriptUsado?: string | null
@@ -243,9 +247,11 @@ export type Database = {
                 }
                 Update: {
                     client_id?: string | null
+                    commentsCount?: number | null
                     created_at?: string
                     id?: number
                     legendaPost?: string | null
+                    likesCount?: number | null
                     original_post_id?: string | null
                     playCount?: string | null
                     scriptUsado?: string | null
@@ -500,10 +506,8 @@ export type Enums<
     : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
     ? (Database[PublicEnumNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicEnumNameOrOptions["schema"]]["Enums"] extends Record<string, any>
-        ? Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-        : {}
-        : {})[EnumName]
+        ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+        : never)
     : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
@@ -523,10 +527,8 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
     ? (Database[PublicCompositeTypeNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] extends Record<string, any>
-        ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-        : {}
-        : {})[CompositeTypeName]
+        ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+        : never)
     : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
