@@ -54,6 +54,8 @@ export function ScriptModal({
 # Hook (Gancho Inicial)
 "Você não vai acreditar no que aconteceu hoje!"
 
+**Duração:** 5 segundos **Técnica usada:** Problema/Curiosidade **Gatilho mental:** Urgência
+
 **Análise:**
 Curiosidade imediata. Explora o gatilho da novidade para prender a atenção nos primeiros segundos.
 
@@ -68,6 +70,52 @@ Comente "mapa" se você quer saber onde isso vai dar!
 # Outras Observações
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 `
+
+    // Utility to clean up malformed markdown from AI responses
+    const normalizeMarkdown = (text: string) => {
+        if (!text) return "";
+        let clean = text;
+
+        // 1. Remove wrapping code fences
+        const fenceRegex = /^```(?:markdown)?\s*([\s\S]*?)\s*```$/i;
+        const match = clean.trim().match(fenceRegex);
+        if (match) {
+            clean = match[1];
+        }
+
+        // 2. Fix indentation issues that cause headers to be treated as code
+        const lines = clean.split('\n');
+        const processedLines = lines.map(line => {
+            const trimmed = line.trim();
+            // If a line is a header but indented, trim it
+            if (trimmed.startsWith('#')) return trimmed;
+            // If a line is a horizontal rule but indented, trim it
+            if (trimmed.startsWith('---')) return trimmed;
+
+            // Fix: Split multiple bold fields on the same line
+            // Example: "**Field1:** Value **Field2:** Value" -> "**Field1:** Value\n\n**Field2:** Value"
+            // We look for occurrences of "**Keys:**" that are NOT at the start of the string
+            if (trimmed.includes('**') && trimmed.includes(':')) {
+                // This regex looks for bold keys that are embedded in the text
+                // It replaces "something **Key:**" with "something\n\n**Key:**"
+                return trimmed.replace(/(\s+)(\*\*.+?:\*\*)/g, '\n\n$2');
+            }
+
+            return line;
+        });
+        clean = processedLines.join('\n');
+
+        // 3. Ensure proper spacing before headers
+        clean = clean.replace(/([^\n])\n(#{1,6}\s)/g, '$1\n\n$2');
+
+        // 4. Ensure proper spacing before Bold Keys acting as headers
+        // Looks for newline followed immediately by **Key:** and makes it double newline
+        clean = clean.replace(/\n(\*\*.+?:\*\*)/g, '\n\n$1');
+
+        return clean;
+    };
+
+    const displayContent = normalizeMarkdown(String(scriptContent || defaultScript));
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -113,7 +161,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
                                         blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/50 pl-4 py-1 my-4 italic text-muted-foreground bg-muted/20 rounded-r" {...props} />,
                                     }}
                                 >
-                                    {String(scriptContent || defaultScript)}
+                                    {displayContent}
                                 </ReactMarkdown>
                             </div>
                         )}
