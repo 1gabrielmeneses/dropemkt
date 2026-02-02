@@ -67,15 +67,17 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
                 {/* Thumbnail with Video Embed */}
                 <div className="relative aspect-[9/16] bg-muted" onClick={handleCardClick}>
                     {reel.videoUrl ? (
-                        <div className="w-full h-full pointer-events-none">
-                            <iframe
-                                src={getEmbedUrl(reel.videoUrl)}
-                                className="w-full h-full object-cover"
-                                frameBorder="0"
-                                scrolling="no"
-                                allowTransparency
-                                allow="encrypted-media"
-                            />
+                        <div className="w-full h-full pointer-events-none overflow-hidden relative">
+                            <div className="absolute inset-0 flex items-center justify-center transform scale-[1.7]">
+                                <iframe
+                                    src={getEmbedUrl(reel.videoUrl)}
+                                    className="w-full h-full object-cover"
+                                    frameBorder="0"
+                                    scrolling="no"
+                                    allowTransparency
+                                    allow="encrypted-media"
+                                />
+                            </div>
                         </div>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">

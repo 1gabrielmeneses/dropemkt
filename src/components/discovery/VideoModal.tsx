@@ -31,16 +31,18 @@ export function VideoModal({ isOpen, onClose, videoUrl }: VideoModalProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-black/95 border-none h-[80vh] flex items-center justify-center">
+            <DialogContent className="w-full max-w-[400px] p-0 overflow-hidden bg-black border-none aspect-[9/16] flex items-center justify-center">
                 <DialogTitle className="sr-only">Visualização do Vídeo</DialogTitle>
-                <iframe
-                    src={embedUrl}
-                    className="w-full h-full max-w-full max-h-full"
-                    frameBorder="0"
-                    scrolling="no"
-                    allowTransparency
-                    allow="encrypted-media"
-                />
+                <div className="w-full h-full relative">
+                    <iframe
+                        src={embedUrl}
+                        className="w-full h-full absolute inset-0"
+                        frameBorder="0"
+                        scrolling="no"
+                        allowTransparency
+                        allow="encrypted-media"
+                    />
+                </div>
             </DialogContent>
         </Dialog>
     )
