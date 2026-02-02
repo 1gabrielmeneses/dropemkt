@@ -9,8 +9,8 @@ interface MissingDataPlaceholderProps {
 }
 
 export function MissingDataPlaceholder({
-    message = "No Data Available",
-    subMessage = "We couldn't find any data for this metric yet.",
+    message = "Nenhum dado disponível",
+    subMessage = "Ainda não há dados para esta métrica.",
     className,
     icon: Icon = DatabaseZap
 }: MissingDataPlaceholderProps) {

@@ -72,8 +72,8 @@ export default function DashboardPage() {
         return (
             <div className="flex h-[50vh] items-center justify-center">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold">No Active Project</h2>
-                    <p className="text-muted-foreground">Select or create a project from the sidebar.</p>
+<h2 className="text-2xl font-bold">Nenhum projeto ativo</h2>
+                <p className="text-muted-foreground">Selecione ou crie um projeto na barra lateral.</p>
                 </div>
             </div>
         )
@@ -85,7 +85,7 @@ export default function DashboardPage() {
 
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Profile Summary</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Resumo do perfil</h1>
                 </div>
                 <div className="flex gap-2">
                 </div>
@@ -94,10 +94,10 @@ export default function DashboardPage() {
             <Tabs defaultValue="overview" className="space-y-6">
                 <div className="flex items-center justify-between">
                     <TabsList className="bg-transparent p-0 gap-2">
-                        <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Account Summary</TabsTrigger>
+                        <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Resumo da conta</TabsTrigger>
 
-                        <TabsTrigger value="profiles" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Competitors</TabsTrigger>
-                        <TabsTrigger value="analyzed" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Analyzed Content</TabsTrigger>
+                        <TabsTrigger value="profiles" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Competidores</TabsTrigger>
+                        <TabsTrigger value="analyzed" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Conteúdo analisado</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -125,20 +125,20 @@ export default function DashboardPage() {
                     <div className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setAddProfileOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Manual Add
+                            Adicionar manual
                         </Button>
                         <Button onClick={() => setDiscoveryOpen(true)} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0">
                             <Users className="mr-2 h-4 w-4" />
-                            AI Discovery
+                            Descoberta com IA
                         </Button>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {activeClient.profiles.length === 0 ? (
                             <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
-                                <h3 className="text-lg font-medium mb-2">No competitors tracked</h3>
-                                <p className="mb-4">Start by adding competitors to analyze their strategy.</p>
-                                <Button onClick={() => setDiscoveryOpen(true)}>Find Competitors</Button>
+                                <h3 className="text-lg font-medium mb-2">Nenhum competidor adicionado</h3>
+                                <p className="mb-4">Adicione competidores para analisar a estratégia deles.</p>
+                                <Button onClick={() => setDiscoveryOpen(true)}>Encontrar competidores</Button>
                             </div>
                         ) : (
                             activeClient.profiles.map((profile) => (
@@ -167,7 +167,7 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {savedPosts.length === 0 ? (
                             <div className="col-span-full flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground gap-4">
-                                <p>Use the Discovery tab to find and analyze content.</p>
+                                <p>Use a aba Discovery para encontrar e analisar conteúdo.</p>
                             </div>
                         ) : (
                             savedPosts.map(post => (

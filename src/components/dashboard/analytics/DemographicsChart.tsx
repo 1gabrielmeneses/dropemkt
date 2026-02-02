@@ -12,13 +12,13 @@ export function DemographicsChart() {
     return (
         <Card className="shadow-sm border-border/50 h-full flex flex-col">
             <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Demographic</CardTitle>
+                <CardTitle className="text-base font-semibold">Demografia</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 min-h-[200px]">
                 {!hasData ? (
                     <MissingDataPlaceholder
                         message="No Demographic Data"
-                        subMessage="Demographics will appear here once we gather enough audience insights."
+                        subMessage="A demografia aparecerá aqui quando houver dados suficientes do público."
                         icon={Users}
                     />
                 ) : (

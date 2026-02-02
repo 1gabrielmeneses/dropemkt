@@ -18,7 +18,7 @@ export async function login(formData: FormData) {
     })
 
     if (error) {
-        redirect('/login?error=Invalid credentials')
+        redirect('/login?error=E-mail ou senha inválidos')
     }
 
     revalidatePath('/', 'layout')
@@ -37,7 +37,7 @@ export async function signup(formData: FormData) {
     })
 
     if (error) {
-        redirect('/login?error=Could not authenticate user')
+        redirect('/login?error=Não foi possível criar a conta. Tente novamente.')
     }
 
     revalidatePath('/', 'layout')

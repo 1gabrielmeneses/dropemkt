@@ -85,30 +85,30 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
             <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>
-                        {step === 1 && "Add New Client"}
-                        {step === 2 && "Analyzing Client Niche..."}
-                        {step === 3 && "Strategy Ready"}
+                        {step === 1 && "Novo cliente"}
+                        {step === 2 && "Analisando nicho do cliente..."}
+                        {step === 3 && "Estratégia pronta"}
                     </DialogTitle>
                     <DialogDescription>
-                        {step === 1 && "Enter the client details to start tracking competitors."}
-                        {step === 2 && "Our AI is building the initial content profile..."}
-                        {step === 3 && "Client profile created successfully."}
+                        {step === 1 && "Preencha os dados do cliente para começar a rastrear concorrentes."}
+                        {step === 2 && "Nossa IA está montando o perfil de conteúdo..."}
+                        {step === 3 && "Perfil do cliente criado com sucesso."}
                     </DialogDescription>
                 </DialogHeader>
 
                 {step === 1 && (
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="client-name">Client / Project Name</Label>
-                            <Input
-                                id="client-name"
-                                placeholder="e.g. FitGear Apparel"
+<Label htmlFor="client-name">Nome do cliente ou projeto</Label>
+                                <Input
+                                    id="client-name"
+                                    placeholder="ex: Marca Fitness"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="client-instagram">Instagram Username</Label>
+                            <Label htmlFor="client-instagram">Usuário do Instagram</Label>
                             <Input
                                 id="client-instagram"
                                 placeholder="@username"
@@ -121,7 +121,7 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
                             <textarea
                                 id="client-brief"
                                 className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Describe the client's niche and goals..."
+                                placeholder="Descreva o nicho e os objetivos do cliente..."
                                 value={brief}
                                 onChange={(e) => setBrief(e.target.value)}
                             />
@@ -139,9 +139,9 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
                 {step === 3 && (
                     <div className="space-y-4 py-4">
                         <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-4 text-sm border border-green-200 dark:border-green-900">
-                            <p className="font-semibold text-green-800 dark:text-green-300">Success!</p>
+                            <p className="font-semibold text-green-800 dark:text-green-300">Sucesso!</p>
                             <p className="text-green-700 dark:text-green-400 mt-1">
-                                Created context for <strong>{name}</strong>. You can now add profiles and find content.
+                                Contexto criado para <strong>{name}</strong>. Agora você pode adicionar perfis e encontrar conteúdo.
                             </p>
                         </div>
                     </div>
@@ -149,13 +149,13 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
 
                 <DialogFooter>
                     {step === 1 && (
-                        <Button onClick={handleSubmit} disabled={!name || !instagram}>Analyze & Create</Button>
+                        <Button onClick={handleSubmit} disabled={!name || !instagram}>Analisar e criar</Button>
                     )}
                     {step === 3 && (
                         <Button onClick={() => {
                             reset();
                             onOpenChange(false);
-                        }}>Go to Dashboard</Button>
+                        }}>Ir para o dashboard</Button>
                     )}
                 </DialogFooter>
             </DialogContent>

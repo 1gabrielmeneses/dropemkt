@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Dropê Analytics",
-  description: "The ultimate marketplace platform.",
+  description: "A plataforma definitiva de analytics e descoberta de conteúdo.",
 };
 
 export default function RootLayout({

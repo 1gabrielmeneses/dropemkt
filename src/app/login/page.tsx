@@ -24,7 +24,7 @@ export default function LoginPage({
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">DropeMKT</CardTitle>
                     <CardDescription className="text-center">
-                        Enter your email to sign in to your account
+                        Digite seu e-mail para acessar sua conta
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -42,7 +42,7 @@ export default function LoginPage({
                     <Tabs defaultValue="login" className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-4">
                             <TabsTrigger value="login">Login</TabsTrigger>
-                            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                            <TabsTrigger value="signup">Criar conta</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="login">
@@ -58,7 +58,7 @@ export default function LoginPage({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">Senha</Label>
                                     <Input
                                         id="password"
                                         name="password"
@@ -66,7 +66,7 @@ export default function LoginPage({
                                         required
                                     />
                                 </div>
-                                <Button type="submit" className="w-full">Sign In</Button>
+                                <Button type="submit" className="w-full">Entrar</Button>
                             </form>
                         </TabsContent>
 
@@ -83,7 +83,7 @@ export default function LoginPage({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="password-signup">Password</Label>
+                                    <Label htmlFor="password-signup">Senha</Label>
                                     <Input
                                         id="password-signup"
                                         name="password"
@@ -91,13 +91,13 @@ export default function LoginPage({
                                         required
                                     />
                                 </div>
-                                <Button type="submit" variant="secondary" className="w-full">Create Account</Button>
+                                <Button type="submit" variant="secondary" className="w-full">Criar conta</Button>
                             </form>
                         </TabsContent>
                     </Tabs>
                 </CardContent>
                 <CardFooter className="flex justify-center text-xs text-muted-foreground mt-4">
-                    <p>Protected by Supabase Auth</p>
+                    <p>Protegido por Supabase Auth</p>
                 </CardFooter>
             </Card>
         </div>

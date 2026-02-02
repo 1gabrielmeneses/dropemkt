@@ -39,12 +39,12 @@ const items = [
         icon: Search,
     },
     {
-        title: "Calendar",
+        title: "Calendário",
         url: "/dashboard/calendar",
         icon: CalendarDays,
     },
     {
-        title: "Settings",
+        title: "Configurações",
         url: "/dashboard/settings",
         icon: Settings,
     },
@@ -72,7 +72,7 @@ export function Sidebar() {
             </div>
             <div className="p-4 border-t space-y-2">
                 <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Theme</span>
+                    <span className="text-sm text-muted-foreground">Tema</span>
                     <ThemeToggle />
                 </div>
                 <Button
@@ -85,7 +85,7 @@ export function Sidebar() {
                     }}
                 >
                     <LogOut className="h-4 w-4" />
-                    Log Out
+                    Sair
                 </Button>
             </div>
         </aside>
@@ -99,7 +99,7 @@ export function MobileSidebar() {
             <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
                     <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle Menu</span>
+                    <span className="sr-only">Abrir menu</span>
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0 flex flex-col">
@@ -116,7 +116,7 @@ export function MobileSidebar() {
                 <SidebarContent onItemClick={() => setOpen(false)} />
                 <div className="p-4 border-t mt-auto space-y-2">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Theme</span>
+                        <span className="text-sm text-muted-foreground">Tema</span>
                         <ThemeToggle />
                     </div>
                     <Button
@@ -129,7 +129,7 @@ export function MobileSidebar() {
                         }}
                     >
                         <LogOut className="h-4 w-4" />
-                        Log Out
+                        Sair
                     </Button>
                 </div>
             </SheetContent>
@@ -157,16 +157,15 @@ function ClientSwitcher() {
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the client
-                            and all associated data.
+                            Esta ação não pode ser desfeita. O cliente e todos os dados associados serão excluídos.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
+                            Excluir
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -182,13 +181,13 @@ function ClientSwitcher() {
                                     {activeClient?.name?.[0] || "?"}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="truncate font-medium">{activeClient?.name || "Select Client"}</span>
+                            <span className="truncate font-medium">{activeClient?.name || "Selecionar cliente"}</span>
                         </div>
                         <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-60" align="start">
-                    <DropdownMenuLabel>My Clients</DropdownMenuLabel>
+                    <DropdownMenuLabel>Meus clientes</DropdownMenuLabel>
 
                     {clients.map(client => (
                         <div key={client.id} className="relative flex items-center group">
@@ -237,7 +236,7 @@ function ClientSwitcher() {
                         className="gap-2 text-muted-foreground hover:text-primary cursor-pointer h-10"
                     >
                         <PlusCircle className="h-4 w-4" />
-                        Add New Client
+                        Novo cliente
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

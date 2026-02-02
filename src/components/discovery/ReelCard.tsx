@@ -13,10 +13,11 @@ interface ReelCardProps {
     onSave?: (reel: WebhookReelData) => void
     onRemove?: (reel: WebhookReelData) => void
     onPlay?: (url: string) => void
+    onOpenScript?: (reel: WebhookReelData) => void
     isSaved?: boolean
 }
 
-export function ReelCard({ reel, onSave, onRemove, onPlay, isSaved = false }: ReelCardProps) {
+export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved = false }: ReelCardProps) {
     const [isHovered, setIsHovered] = useState(false)
     const [showCaptionModal, setShowCaptionModal] = useState(false)
 
@@ -42,6 +43,19 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, isSaved = false }: Re
         }
     }
 
+    const getEmbedUrl = (url: string) => {
+        try {
+            const urlObj = new URL(url)
+            if (urlObj.hostname.includes('instagram.com')) {
+                const pathname = urlObj.pathname.replace(/\/$/, '')
+                return `${urlObj.origin}${pathname}/embed`
+            }
+            return url
+        } catch (e) {
+            return url
+        }
+    }
+
     return (
         <>
             <Card
@@ -50,32 +64,24 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, isSaved = false }: Re
                 onMouseLeave={() => setIsHovered(false)}
             >
                 {/* Thumbnail with Play Button */}
+                {/* Thumbnail with Video Embed */}
                 <div className="relative aspect-[9/16] bg-muted" onClick={handleCardClick}>
-                    {reel.displayUrl || reel.thumbnailUrl ? (
-                        <img
-                            src={`/api/image-proxy?url=${encodeURIComponent(reel.displayUrl || reel.thumbnailUrl || '')}`}
-                            alt="Reel thumbnail"
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement?.classList.add('fallback-icon');
-                            }}
-                        />
+                    {reel.videoUrl ? (
+                        <div className="w-full h-full pointer-events-none">
+                            <iframe
+                                src={getEmbedUrl(reel.videoUrl)}
+                                className="w-full h-full object-cover"
+                                frameBorder="0"
+                                scrolling="no"
+                                allowTransparency
+                                allow="encrypted-media"
+                            />
+                        </div>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
                             <Play className="h-12 w-12 opacity-50" />
                         </div>
                     )}
-
-                    {/* Play Button Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className={`transition-all ${isHovered ? 'scale-110' : 'scale-100'}`}>
-                            <div className="bg-black/40 backdrop-blur-sm rounded-full p-6">
-                                <Play className="h-8 w-8 text-white fill-white" />
-                            </div>
-                        </div>
-                    </div>
 
                     {/* View Count Badge (bottom left) */}
                     <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded px-2 py-1">
@@ -123,22 +129,35 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, isSaved = false }: Re
                         )}
                     </div>
 
-                    {/* Save/Remove Button */}
-                    <Button
-                        size="sm"
-                        variant={isSaved ? "destructive" : "default"}
-                        className="w-full mt-auto"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            if (isSaved) {
-                                onRemove?.(reel)
-                            } else {
-                                onSave?.(reel)
-                            }
-                        }}
-                    >
-                        {isSaved ? "Remove from Favorites" : "Save for Analysis"}
-                    </Button>
+                    {/* Save/Remove Button & Script Button */}
+                    <div className="mt-auto flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (onOpenScript) onOpenScript(reel)
+                            }}
+                        >
+                            Roteiro
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant={isSaved ? "destructive" : "default"}
+                            className="flex-1"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (isSaved) {
+                                    onRemove?.(reel)
+                                } else {
+                                    onSave?.(reel)
+                                }
+                            }}
+                        >
+                            {isSaved ? "Remover" : "Salvar"}
+                        </Button>
+                    </div>
                 </div>
             </Card>
 

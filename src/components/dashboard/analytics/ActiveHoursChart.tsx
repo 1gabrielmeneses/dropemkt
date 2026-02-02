@@ -24,7 +24,7 @@ export function ActiveHoursChart() {
     return (
         <Card className="shadow-sm border-border/50 h-full flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-semibold">Active Hours</CardTitle>
+                <CardTitle className="text-base font-semibold">Horários de maior atividade</CardTitle>
                 {hasData && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground hidden sm:flex">
                         <span className="flex items-center gap-1"><span className="w-2 h-2 bg-primary/20 rounded-sm"></span> Low</span>
@@ -37,7 +37,7 @@ export function ActiveHoursChart() {
                 {!hasData ? (
                     <MissingDataPlaceholder
                         message="No Activity Data"
-                        subMessage="We haven't tracked enough activity to build a heatmap yet."
+                        subMessage="Ainda não há atividade suficiente para montar o mapa de calor."
                         icon={Clock}
                     />
                 ) : (

@@ -52,7 +52,7 @@ export function ContentCard({ title, thumbnail, views, likes, platform, onSave, 
                     onClick={onSave}
                     disabled={isSaved}
                 >
-                    {isSaved ? "Saved" : "Save for Analysis"}
+                    {isSaved ? "Salvo" : "Salvar para análise"}
                 </Button>
             </CardFooter>
         </Card>

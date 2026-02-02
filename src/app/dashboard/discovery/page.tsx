@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Loader2 } from "lucide-react"
 import { VideoModal } from "@/components/discovery/VideoModal"
+import { ScriptModal } from "@/components/discovery/ScriptModal"
 import { ReelCard } from "@/components/discovery/ReelCard"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -26,7 +27,9 @@ export default function DiscoveryPage() {
     const [matchContext, setMatchContext] = useState(true)
 
     const [modalOpen, setModalOpen] = useState(false)
+    const [scriptModalOpen, setScriptModalOpen] = useState(false)
     const [selectedVideoUrl, setSelectedVideoUrl] = useState("")
+    const [selectedScriptVideoUrl, setSelectedScriptVideoUrl] = useState("")
 
     useEffect(() => {
         async function loadReels() {
@@ -140,18 +143,18 @@ export default function DiscoveryPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">Discovery Engine</h1>
-                <p className="text-muted-foreground">Find viral content in your niche.</p>
+                <h1 className="text-3xl font-bold">Motor de descoberta</h1>
+                <p className="text-muted-foreground">Encontre conteúdo viral no seu nicho.</p>
             </div>
 
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
                 <div className="flex-1 space-y-2">
-                    <Label>Search keywords...</Label>
+                    <Label>Buscar por palavras-chave...</Label>
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search keywords..."
+                            placeholder="Buscar por palavras-chave..."
                             className="pl-9"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -159,13 +162,13 @@ export default function DiscoveryPage() {
                     </div>
                 </div>
                 <div className="w-full md:w-[200px] space-y-2">
-                    <Label>Platform</Label>
+                    <Label>Plataforma</Label>
                     <Select value={platform} onValueChange={setPlatform}>
                         <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Platforms</SelectItem>
+                            <SelectItem value="all">Todas as plataformas</SelectItem>
                             <SelectItem value="instagram">Instagram</SelectItem>
                             <SelectItem value="tiktok">TikTok</SelectItem>
                         </SelectContent>
@@ -182,7 +185,7 @@ export default function DiscoveryPage() {
                         onCheckedChange={(checked) => setMatchContext(checked as boolean)}
                     />
                     <Label htmlFor="match-context" className="cursor-pointer">
-                        Match Client Context: <span className="text-primary font-medium">{activeClient.name}</span>
+                        Contexto do cliente: <span className="text-primary font-medium">{activeClient.name}</span>
                     </Label>
                 </div>
             )}
@@ -227,6 +230,10 @@ export default function DiscoveryPage() {
                             onSave={handleSave}
                             onRemove={handleRemove}
                             isSaved={savedPostIds.has(reel.id)}
+                            onOpenScript={(reel) => {
+                                setSelectedScriptVideoUrl(reel.videoUrl)
+                                setScriptModalOpen(true)
+                            }}
                         />
                     ))}
                 </div>
@@ -236,6 +243,12 @@ export default function DiscoveryPage() {
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 videoUrl={selectedVideoUrl}
+            />
+
+            <ScriptModal
+                isOpen={scriptModalOpen}
+                onClose={() => setScriptModalOpen(false)}
+                videoUrl={selectedScriptVideoUrl}
             />
         </div>
     )

@@ -57,7 +57,7 @@ export function ProfileCard({ id, handle, name, avatarUrl, platform, tags, onDel
                 </div>
                 <Button variant="outline" size="sm" className="w-full h-8 text-xs" asChild>
                     <a href={`https://${platform}.com/${handle.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                        View Profile <ExternalLink className="ml-2 h-3 w-3" />
+                        Ver perfil <ExternalLink className="ml-2 h-3 w-3" />
                     </a>
                 </Button>
             </CardContent>

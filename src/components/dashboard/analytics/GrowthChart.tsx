@@ -25,7 +25,7 @@ export function GrowthChart() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-base font-semibold">Followers Growth</CardTitle>
+                        <CardTitle className="text-base font-semibold">Crescimento de seguidores</CardTitle>
                     </div>
                     {/* Only show badge if data exists */}
                     {hasData && (
@@ -39,7 +39,7 @@ export function GrowthChart() {
                 {!hasData ? (
                     <MissingDataPlaceholder
                         message="No Growth Data"
-                        subMessage="We need more time to track your growth metrics."
+                        subMessage="Precisamos de mais tempo para acompanhar suas métricas de crescimento."
                         icon={TrendingUp}
                     />
                 ) : (

@@ -36,9 +36,9 @@ export function AddProfileDialog({ open, onOpenChange }: AddProfileDialogProps) 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Add New Profile</DialogTitle>
+                    <DialogTitle>Adicionar perfil</DialogTitle>
                     <DialogDescription>
-                        Enter the handle or URL of the competitor you want to track.
+                        Digite o handle ou a URL do concorrente que deseja rastrear.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -47,7 +47,7 @@ export function AddProfileDialog({ open, onOpenChange }: AddProfileDialogProps) 
                         <Label>Platform</Label>
                         <Select value={platform} onValueChange={(v: any) => setPlatform(v)}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select platform" />
+                                <SelectValue placeholder="Selecionar plataforma" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="instagram">Instagram</SelectItem>
@@ -58,17 +58,17 @@ export function AddProfileDialog({ open, onOpenChange }: AddProfileDialogProps) 
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="handle">Handle</Label>
-                        <Input id="handle" placeholder="@username" value={handle} onChange={(e) => setHandle(e.target.value)} />
+                        <Input id="handle" placeholder="@usuario" value={handle} onChange={(e) => setHandle(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="tags">Tags (comma separated)</Label>
-                        <Input id="tags" placeholder="Fashion, Competitor, Ref" value={tags} onChange={(e) => setTags(e.target.value)} />
+                        <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                        <Input id="tags" placeholder="Moda, Concorrente, Ref" value={tags} onChange={(e) => setTags(e.target.value)} />
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={!handle}>Add Profile</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={!handle}>Adicionar perfil</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

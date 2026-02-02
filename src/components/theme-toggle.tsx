@@ -35,7 +35,7 @@ export function ThemeToggle() {
             ) : (
                 <Moon className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
             )}
-            <span className="sr-only">Toggle theme</span>
+            <span className="sr-only">Alternar tema</span>
         </Button>
     )
 }

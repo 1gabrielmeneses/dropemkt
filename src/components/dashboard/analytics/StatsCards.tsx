@@ -76,19 +76,19 @@ export function StatsCards() {
     return (
         <div className="grid gap-6 md:grid-cols-3">
             <StatCard
-                title="Followers"
+                title="Seguidores"
                 value={followers}
                 growth={undefined} // Hardcoded growth removed, passed undefined
                 icon={User}
             />
             <StatCard
-                title="Views"
+                title="Visualizações"
                 value={views}
                 growth={undefined} // Hardcoded growth removed
                 icon={Play}
             />
             <StatCard
-                title="Posts"
+                title="Publicações"
                 value={posts}
                 growth={undefined} // Hardcoded growth removed
                 icon={FileText}

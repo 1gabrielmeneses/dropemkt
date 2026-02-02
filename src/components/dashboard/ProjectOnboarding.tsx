@@ -42,28 +42,28 @@ export function ProjectOnboarding() {
             <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>
-                        {step === 1 && "Create New Project"}
-                        {step === 2 && "Analyzing Briefing..."}
-                        {step === 3 && "Project Strategy Ready"}
+                        {step === 1 && "Novo projeto"}
+                        {step === 2 && "Analisando briefing..."}
+                        {step === 3 && "Estratégia do projeto pronta"}
                     </DialogTitle>
                     <DialogDescription>
-                        {step === 1 && "Start by defining your client or niche."}
-                        {step === 2 && "Our AI is extracting key niches and competitor suggestions..."}
-                        {step === 3 && "Here is what we found based on your briefing."}
+                        {step === 1 && "Comece definindo seu cliente ou nicho."}
+                        {step === 2 && "Nossa IA está extraindo nichos e sugestões de concorrentes..."}
+                        {step === 3 && "Aqui está o que encontramos com base no seu briefing."}
                     </DialogDescription>
                 </DialogHeader>
 
                 {step === 1 && (
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Project Name</Label>
-                            <Input id="name" placeholder="e.g. EcoFriendly Bottle Launch" value={name} onChange={(e) => setName(e.target.value)} />
+                            <Label htmlFor="name">Nome do projeto</Label>
+                            <Input id="name" placeholder="ex: Lançamento EcoFriendly" value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="brief">Briefing / Goals</Label>
                             <Textarea
                                 id="brief"
-                                placeholder="We want to analyze competitors in the sustainable lifestyle niche on TikTok..."
+                                placeholder="Queremos analisar concorrentes no nicho de vida sustentável no TikTok..."
                                 value={brief}
                                 onChange={(e) => setBrief(e.target.value)}
                             />
@@ -74,18 +74,18 @@ export function ProjectOnboarding() {
                 {step === 2 && (
                     <div className="py-8 flex flex-col items-center justify-center text-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                        <p className="text-sm text-muted-foreground">Finding top Creators...</p>
+                        <p className="text-sm text-muted-foreground">Buscando melhores criadores...</p>
                     </div>
                 )}
 
                 {step === 3 && (
                     <div className="space-y-4 py-4">
                         <div className="rounded-lg bg-muted p-4 text-sm">
-                            <p className="font-semibold mb-2">AI Summary:</p>
+                            <p className="font-semibold mb-2">Resumo da IA:</p>
                             <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
-                                <li>Niche: Sustainable Living & Eco-Products</li>
-                                <li>Primary Platform: TikTok & Instagram Reels</li>
-                                <li>Suggested Content: "Day in the life", "Unboxing", "Educational Eco-tips"</li>
+                                <li>Nicho: Vida sustentável e produtos eco</li>
+                                <li>Plataforma principal: TikTok e Instagram Reels</li>
+                                <li>Conteúdo sugerido: "Dia a dia", "Unboxing", "Dicas eco educativas"</li>
                             </ul>
                         </div>
                     </div>
@@ -93,10 +93,10 @@ export function ProjectOnboarding() {
 
                 <DialogFooter>
                     {step === 1 && (
-                        <Button onClick={handleSubmit} disabled={!name || !brief}>Genererate Strategy</Button>
+                        <Button onClick={handleSubmit} disabled={!name || !brief}>Gerar estratégia</Button>
                     )}
                     {step === 3 && (
-                        <Button onClick={handleConfirm}>Start Dashboard</Button>
+                        <Button onClick={handleConfirm}>Abrir dashboard</Button>
                     )}
                 </DialogFooter>
             </DialogContent>

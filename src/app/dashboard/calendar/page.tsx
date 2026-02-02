@@ -119,7 +119,7 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent }: {
                         title={event.marker?.description || ''}
                     >
                         <p className="font-semibold text-slate-800 line-clamp-2 leading-tight">
-                            {event.marker?.name || 'Event'}
+                            {event.marker?.name || 'Evento'}
                         </p>
                         <div className="absolute -top-1 -right-1 flex gap-0.5 opacity-0 group-hover/event:opacity-100 transition-opacity">
                             <button
@@ -138,7 +138,7 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent }: {
                                     onDeleteEvent(event.id);
                                 }}
                                 className="bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
-                                title="Deletar"
+                                title="Excluir"
                             >
                                 <span className="h-3 w-3 flex items-center justify-center text-[10px]">&times;</span>
                             </button>
@@ -375,9 +375,9 @@ export default function CalendarPage() {
             <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-primary">Editorial Calendar</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-primary">Calendário editorial</h1>
                         <p className="text-muted-foreground mt-1">
-                            {activeClient ? `Plan for: ${activeClient.name}` : "Select a client to plan."}
+                            {activeClient ? `Planejamento para: ${activeClient.name}` : "Selecione um cliente para planejar."}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 bg-card border rounded-md p-1">
@@ -397,7 +397,7 @@ export default function CalendarPage() {
                     {/* Visual Calendar Grid */}
                     <div className="flex-1 bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col">
                         <div className="grid grid-cols-7 border-b bg-muted/30">
-                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
                                 <div key={day} className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                     {day}
                                 </div>
@@ -427,7 +427,7 @@ export default function CalendarPage() {
                         <Card className="flex-1 flex flex-col shadow-sm border-dashed">
                             <CardHeader className="pb-3 border-b bg-muted/10">
                                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                                    Scheduled Content
+                                    Conteúdo agendado
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 overflow-auto p-4 bg-muted/5">
@@ -454,7 +454,7 @@ export default function CalendarPage() {
                                                             <div className="w-full aspect-video rounded overflow-hidden bg-muted">
                                                                 <img
                                                                     src={content.thumbnail_url}
-                                                                    alt={content.title || 'Content'}
+                                                                    alt={content.title || 'Conteúdo'}
                                                                     className="w-full h-full object-cover"
                                                                 />
                                                             </div>
@@ -481,8 +481,8 @@ export default function CalendarPage() {
                                                     </Button>
                                                 </DialogTrigger>
                                                 <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Criar Novo Marcador</DialogTitle>
+<DialogHeader>
+                                                    <DialogTitle>Criar novo marcador</DialogTitle>
                                                     </DialogHeader>
                                                     <div className="grid gap-4 py-4">
                                                         <div className="grid gap-2">
