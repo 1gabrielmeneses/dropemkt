@@ -173,3 +173,105 @@ export async function getSavedPosts(clientId: string): Promise<WebhookReelData[]
         return []
     }
 }
+
+export async function saveScript(clientId: string, reel: WebhookReelData, scriptContent: string) {
+    const supabase = await createClient()
+
+    try {
+        console.log('[saveScript] Saving script for post:', reel.id)
+
+        // Check if post exists in saved posts
+        const { data: existingPost } = await supabase
+            .from('posts_salvos')
+            .select('id')
+            .eq('client_id', clientId)
+            .eq('original_post_id', reel.id)
+            .single()
+
+        if (existingPost) {
+            // Update existing post with script
+            const { error } = await supabase
+                .from('posts_salvos')
+                .update({ scriptUsado: scriptContent })
+                .eq('id', existingPost.id)
+
+            if (error) throw error
+        } else {
+            // Insert new post with script
+            const { error } = await supabase
+                .from('posts_salvos')
+                .insert({
+                    client_id: clientId,
+                    created_at: new Date().toISOString(),
+                    tipoPost: 'Reel',
+                    urlPost: reel.videoUrl,
+                    legendaPost: reel.caption,
+                    viewCount: reel.viewCount.toString(),
+                    playCount: reel.viewCount.toString(),
+                    likesCount: reel.likeCount,
+                    commentsCount: reel.commentCount,
+                    scriptUsado: scriptContent,
+                    original_post_id: reel.id,
+                    thumbnailurl: reel.displayUrl || reel.thumbnailUrl
+                })
+
+            if (error) throw error
+        }
+
+        return { success: true }
+    } catch (error) {
+        console.error("[saveScript] Error:", error)
+        return { success: false, error }
+    }
+}
+
+export async function removeSavedScript(clientId: string, postId: string) {
+    const supabase = await createClient()
+
+    try {
+        console.log('[removeSavedScript] Removing script for post:', postId)
+
+        const { error } = await supabase
+            .from('posts_salvos')
+            .update({ scriptUsado: null })
+            .eq('client_id', clientId)
+            .eq('original_post_id', postId)
+
+        if (error) throw error
+
+        return { success: true }
+    } catch (error) {
+        console.error("[removeSavedScript] Error:", error)
+        return { success: false, error }
+    }
+}
+
+export async function getSavedScripts(clientId: string): Promise<Record<string, string>> {
+    const supabase = await createClient()
+
+    try {
+        const { data, error } = await supabase
+            .from('posts_salvos')
+            .select('original_post_id, scriptUsado')
+            .eq('client_id', clientId)
+            .not('scriptUsado', 'is', null)
+            .neq('scriptUsado', '')
+
+        if (error) {
+            console.error("[getSavedScripts] Error fetching saved scripts:", error)
+            return {}
+        }
+
+        const scriptMap: Record<string, string> = {}
+        data?.forEach(item => {
+            if (item.original_post_id && item.scriptUsado) {
+                scriptMap[item.original_post_id] = item.scriptUsado
+            }
+        })
+
+        return scriptMap
+    } catch (error) {
+        console.error("[getSavedScripts] Unexpected error:", error)
+        return {}
+    }
+}

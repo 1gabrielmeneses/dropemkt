@@ -74,7 +74,8 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
                                     className="w-full h-full object-cover"
                                     frameBorder="0"
                                     scrolling="no"
-                                    allowTransparency
+                                    // @ts-expect-error - React needs lowercase allowtransparency for DOM, but TS expects camelCase
+                                    allowtransparency="true"
                                     allow="encrypted-media"
                                 />
                             </div>

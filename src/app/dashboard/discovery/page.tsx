@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useStore } from "@/store/useStore"
-import { getScrapedPosts, savePost, removePost, getSavedPostIds } from "@/app/actions/discovery"
-import { WebhookReelData } from "@/app/actions/webhook"
+import { getScrapedPosts, savePost, removePost, getSavedPostIds, saveScript, removeSavedScript, getSavedScripts } from "@/app/actions/discovery"
+import { WebhookReelData, triggerScriptWebhook } from "@/app/actions/webhook"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Loader2 } from "lucide-react"
@@ -21,6 +21,7 @@ export default function DiscoveryPage() {
     const [reels, setReels] = useState<WebhookReelData[]>([])
     const [filteredReels, setFilteredReels] = useState<WebhookReelData[]>([])
     const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set())
+    const [savedScripts, setSavedScripts] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [platform, setPlatform] = useState<string>("all")
@@ -30,6 +31,9 @@ export default function DiscoveryPage() {
     const [scriptModalOpen, setScriptModalOpen] = useState(false)
     const [selectedVideoUrl, setSelectedVideoUrl] = useState("")
     const [selectedScriptVideoUrl, setSelectedScriptVideoUrl] = useState("")
+    const [selectedScriptReel, setSelectedScriptReel] = useState<WebhookReelData | null>(null)
+    const [scriptContent, setScriptContent] = useState<string>("")
+    const [scriptLoading, setScriptLoading] = useState(false)
 
     useEffect(() => {
         async function loadReels() {
@@ -46,15 +50,18 @@ export default function DiscoveryPage() {
 
                 // Fetch reels from Database for the active client
                 // Parallel fetch for posts and saved status
-                const [fetchedReels, savedIds] = await Promise.all([
+                const [fetchedReels, savedIds, savedScriptsMap] = await Promise.all([
                     getScrapedPosts(activeClient.id),
-                    getSavedPostIds(activeClient.id)
+                    getSavedPostIds(activeClient.id),
+                    getSavedScripts(activeClient.id)
                 ])
 
                 console.log('[DiscoveryPage] Fetched reels:', fetchedReels.length)
                 console.log('[DiscoveryPage] Saved IDs:', savedIds)
+                console.log('[DiscoveryPage] Saved Scripts:', Object.keys(savedScriptsMap).length)
 
                 setSavedPostIds(new Set(savedIds))
+                setSavedScripts(savedScriptsMap)
 
                 // Sort by view count descending
                 const sortedReels = fetchedReels.sort((a, b) => b.viewCount - a.viewCount)
@@ -230,9 +237,70 @@ export default function DiscoveryPage() {
                             onSave={handleSave}
                             onRemove={handleRemove}
                             isSaved={savedPostIds.has(reel.id)}
-                            onOpenScript={(reel) => {
+                            onOpenScript={async (reel) => {
                                 setSelectedScriptVideoUrl(reel.videoUrl)
+                                setSelectedScriptReel(reel)
+                                setScriptContent("") // Reset previous content
                                 setScriptModalOpen(true)
+
+                                // Check if we already have a saved script
+                                if (savedScripts[reel.id]) {
+                                    console.log('[DiscoveryPage] Using saved script for:', reel.id)
+                                    setScriptContent(savedScripts[reel.id])
+                                    return
+                                }
+
+                                setScriptLoading(true)
+
+                                try {
+                                    const result = await triggerScriptWebhook(reel.id)
+
+                                    if (result.success && result.data) {
+                                        console.log('Webhook result data:', result.data)
+                                        // Handle different possible response structures
+                                        // Handle different possible response structures
+                                        let content = ""
+                                        const data = result.data
+
+                                        // Helper to extract text from various structures
+                                        const extractText = (obj: any): string => {
+                                            if (!obj) return ""
+                                            if (typeof obj === 'string') return obj
+
+                                            // Handle array (take first item)
+                                            if (Array.isArray(obj)) {
+                                                return obj.length > 0 ? extractText(obj[0]) : ""
+                                            }
+
+                                            // Handle specific nested structures (e.g. Gemini)
+                                            if (obj.content?.parts?.[0]?.text) {
+                                                return obj.content.parts[0].text
+                                            }
+
+                                            // Handle common keys
+                                            if (obj.output) return extractText(obj.output)
+                                            if (obj.script) return extractText(obj.script)
+                                            if (obj.text) return extractText(obj.text)
+                                            if (obj.content && typeof obj.content === 'string') return obj.content
+
+                                            // Fallback to JSON string
+                                            return JSON.stringify(obj, null, 2)
+                                        }
+
+                                        content = extractText(data)
+
+                                        setScriptContent(content)
+                                        toast.success('Roteiro gerado com sucesso!')
+                                    } else {
+                                        toast.error('Erro ao gerar roteiro')
+                                        setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
+                                    }
+                                } catch (error) {
+                                    console.error("Error generating script:", error)
+                                    toast.error('Erro ao conectar com o serviço de IA')
+                                } finally {
+                                    setScriptLoading(false)
+                                }
                             }}
                         />
                     ))}
@@ -249,6 +317,41 @@ export default function DiscoveryPage() {
                 isOpen={scriptModalOpen}
                 onClose={() => setScriptModalOpen(false)}
                 videoUrl={selectedScriptVideoUrl}
+                scriptContent={scriptContent}
+                isLoading={scriptLoading}
+                isScriptSaved={selectedScriptReel ? !!savedScripts[selectedScriptReel.id] : false}
+                onSaveScript={async () => {
+                    if (!activeClient || !selectedScriptReel || !scriptContent) return
+
+                    toast.loading("Salvando roteiro...", { id: "save-script" })
+                    const result = await saveScript(activeClient.id, selectedScriptReel, scriptContent)
+
+                    if (result.success) {
+                        toast.success("Roteiro salvo!", { id: "save-script" })
+                        setSavedScripts(prev => ({ ...prev, [selectedScriptReel.id]: scriptContent }))
+                        // Also update saved posts IDs since saving a script implicitly saves the post
+                        setSavedPostIds(prev => new Set(prev).add(selectedScriptReel.id))
+                    } else {
+                        toast.error("Erro ao salvar roteiro", { id: "save-script" })
+                    }
+                }}
+                onRemoveScript={async () => {
+                    if (!activeClient || !selectedScriptReel) return
+
+                    toast.loading("Removendo roteiro...", { id: "remove-script" })
+                    const result = await removeSavedScript(activeClient.id, selectedScriptReel.id)
+
+                    if (result.success) {
+                        toast.success("Roteiro removido!", { id: "remove-script" })
+                        setSavedScripts(prev => {
+                            const next = { ...prev }
+                            delete next[selectedScriptReel.id]
+                            return next
+                        })
+                    } else {
+                        toast.error("Erro ao remover roteiro", { id: "remove-script" })
+                    }
+                }}
             />
         </div>
     )

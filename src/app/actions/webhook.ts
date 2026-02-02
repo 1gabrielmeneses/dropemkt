@@ -55,3 +55,41 @@ export async function fetchReelsFromWebhook(usernames: string[]): Promise<Webhoo
         throw new Error("Failed to fetch reels from webhook")
     }
 }
+
+export async function triggerScriptWebhook(postId: string): Promise<{ success: boolean; data?: any; error?: any }> {
+    try {
+        console.log('[triggerScriptWebhook] Triggering webhook for post:', postId)
+
+        const response = await fetch('https://autowebhook.maxmizeai.com/webhook/c5a960e6-a475-4b47-bc4b-5215056fec96', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: postId
+            })
+        })
+
+        if (!response.ok) {
+            console.error(`[triggerScriptWebhook] Failed with status: ${response.status} ${response.statusText}`)
+            return { success: false, error: `Status ${response.status}` }
+        }
+
+        // Try to parse as JSON, fallback to text if it's just raw markdown
+        const contentType = response.headers.get("content-type");
+        let data;
+        if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
+            console.log('[triggerScriptWebhook] JSON response:', data);
+        } else {
+            data = await response.text();
+            console.log('[triggerScriptWebhook] Text response:', data);
+        }
+
+        console.log('[triggerScriptWebhook] Success', typeof data)
+        return { success: true, data }
+    } catch (error) {
+        console.error("[triggerScriptWebhook] Error:", error)
+        return { success: false, error }
+    }
+}

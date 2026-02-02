@@ -1,15 +1,31 @@
 "use client"
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import ReactMarkdown from 'react-markdown'
+import { Loader2 } from "lucide-react"
 
 interface ScriptModalProps {
     isOpen: boolean
     onClose: () => void
     videoUrl: string
     scriptContent?: string
+    isScriptSaved?: boolean
+    isLoading?: boolean
+    onSaveScript?: () => void
+    onRemoveScript?: () => void
 }
 
-export function ScriptModal({ isOpen, onClose, videoUrl, scriptContent }: ScriptModalProps) {
+export function ScriptModal({
+    isOpen,
+    onClose,
+    videoUrl,
+    scriptContent,
+    isLoading = false,
+    isScriptSaved = false,
+    onSaveScript,
+    onRemoveScript
+}: ScriptModalProps) {
     if (!videoUrl) return null
 
     // Ensure we use the embed URL format for Instagram
@@ -29,29 +45,29 @@ export function ScriptModal({ isOpen, onClose, videoUrl, scriptContent }: Script
     }
 
     const embedUrl = getEmbedUrl(videoUrl)
-    const defaultScript = `Este é um roteiro mockado para o vídeo.
 
-**Hook:**
-Você não vai acreditar no que aconteceu hoje!
+    // Updated mock script with headers for structure testing
+    const defaultScript = `# Análise de Roteiro
+**Tom:** Casual, informal, motivacional
+**Formato:** Curto (Reel)
 
-**Corpo:**
-1. Primeiro, eu estava andando pela rua tranquila.
-2. De repente, vi algo brilhando no chão.
-3. Quando cheguei perto, percebi que era um mapa antigo.
+# Hook (Gancho Inicial)
+"Você não vai acreditar no que aconteceu hoje!"
 
-**Call to Action:**
+**Análise:**
+Curiosidade imediata. Explora o gatilho da novidade para prender a atenção nos primeiros segundos.
+
+# Corpo do Vídeo
+1. **Cena 1:** Primeiro, eu estava andando pela rua tranquila.
+2. **Cena 2:** De repente, vi algo brilhando no chão.
+3. **Cena 3:** Quando cheguei perto, percebi que era um mapa antigo.
+
+# Call to Action
 Comente "mapa" se você quer saber onde isso vai dar!
 
--------------------
-(Espaço para mais texto mockado para testar o scroll)
-
+# Outras Observações
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`
+`
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -63,19 +79,58 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
                         className="w-full h-full max-w-full max-h-full"
                         frameBorder="0"
                         scrolling="no"
-                        allowTransparency
+                        // @ts-expect-error - React needs lowercase allowtransparency for DOM, but TS expects camelCase
+                        allowtransparency="true"
                         allow="encrypted-media"
                     />
                 </div>
 
                 {/* Script Section */}
                 <div className="h-full w-full bg-background p-6 flex flex-col overflow-hidden">
-                    <DialogTitle className="text-2xl font-bold mb-4">Roteiro do Vídeo</DialogTitle>
-                    <div className="flex-1 pr-4 overflow-y-auto">
-                        <div className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                            {scriptContent || defaultScript}
-                        </div>
+                    <div className="flex items-center justify-between mb-4 border-b pb-4 border-border/40">
+                        <DialogTitle className="text-2xl font-bold tracking-tight">Roteiro do Vídeo</DialogTitle>
                     </div>
+
+                    <div className="flex-1 pr-4 overflow-y-auto custom-scrollbar">
+                        {isLoading ? (
+                            <div className="h-full flex flex-col items-center justify-center space-y-4 text-muted-foreground">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p>Gerando roteiro com IA...</p>
+                            </div>
+                        ) : (
+                            <div className="pb-10 px-1">
+                                <ReactMarkdown
+                                    components={{
+                                        h1: ({ ...props }) => <h1 className="text-xl font-bold text-primary mt-8 mb-4 border-b border-border/50 pb-2 tracking-wide" {...props} />,
+                                        h2: ({ ...props }) => <h2 className="text-lg font-semibold text-foreground mt-6 mb-3" {...props} />,
+                                        h3: ({ ...props }) => <h3 className="text-base font-semibold text-foreground mt-4 mb-2" {...props} />,
+                                        p: ({ ...props }) => <p className="text-base leading-7 text-muted-foreground mb-4" {...props} />,
+                                        ul: ({ ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2 text-muted-foreground" {...props} />,
+                                        ol: ({ ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-muted-foreground" {...props} />,
+                                        li: ({ ...props }) => <li className="pl-1" {...props} />,
+                                        strong: ({ ...props }) => <strong className="font-bold text-foreground" {...props} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                        blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/50 pl-4 py-1 my-4 italic text-muted-foreground bg-muted/20 rounded-r" {...props} />,
+                                    }}
+                                >
+                                    {String(scriptContent || defaultScript)}
+                                </ReactMarkdown>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    {!isLoading && scriptContent && (
+                        <div className="flex justify-end pt-4 border-t border-border/40 mt-auto">
+                            <Button
+                                onClick={() => isScriptSaved ? onRemoveScript?.() : onSaveScript?.()}
+                                variant={isScriptSaved ? "destructive" : "default"}
+                                size="sm"
+                            >
+                                {isScriptSaved ? "Remover Roteiro" : "Salvar Roteiro"}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
