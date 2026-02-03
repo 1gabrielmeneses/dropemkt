@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { WebhookReelData } from "@/app/actions/webhook"
+import { cn, getEmbedUrl } from "@/lib/utils"
 import { Play, Heart, MessageCircle } from "lucide-react"
 
 interface ReelCardProps {
@@ -40,31 +41,6 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
             onPlay(reel.videoUrl)
         } else if (reel.videoUrl) {
             window.open(reel.videoUrl, '_blank')
-        }
-    }
-
-    const getEmbedUrl = (url: string) => {
-        try {
-            const urlObj = new URL(url)
-
-            // Instagram Embed
-            if (urlObj.hostname.includes('instagram.com')) {
-                const pathname = urlObj.pathname.replace(/\/$/, '')
-                return `${urlObj.origin}${pathname}/embed`
-            }
-
-            // TikTok Embed
-            if (urlObj.hostname.includes('tiktok.com')) {
-                // Extract video ID from path: /@username/video/VIDEO_ID
-                const videoIdMatch = urlObj.pathname.match(/video\/(\d+)/)
-                if (videoIdMatch && videoIdMatch[1]) {
-                    return `https://www.tiktok.com/player/v1/${videoIdMatch[1]}?music_info=1&description=1`
-                }
-            }
-
-            return url
-        } catch (e) {
-            return url
         }
     }
 

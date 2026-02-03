@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { searchCompetitors, CompetitorSearchResult } from "@/app/actions/apify"
-import { Loader2, Plus, Check, Search as SearchIcon, ExternalLink } from "lucide-react"
+import { Loader2, Plus, Check, Search as SearchIcon, ExternalLink, X, ChevronUp, ChevronDown, BadgeCheck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useStore } from "@/store/useStore"
 import { Badge } from "@/components/ui/badge"
@@ -25,23 +25,43 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
     const { addProfile, getActiveClient } = useStore()
     const activeClient = getActiveClient()
 
-    const [query, setQuery] = useState(defaultQuery)
+    // Initialize with empty string, ignoring defaultQuery for now as requested
+    // Initialize with empty string, ignoring defaultQuery for now as requested
+    // Initialize with empty string, ignoring defaultQuery for now as requested
+    const [query, setQuery] = useState("")
+    const [keywords, setKeywords] = useState<string[]>([])
+    const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([])
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+    const [isSearchExpanded, setIsSearchExpanded] = useState(true)
     const [platform, setPlatform] = useState<'instagram' | 'tiktok'>('instagram')
     const [loading, setLoading] = useState(false)
     const [progress, setProgress] = useState(0)
     const [results, setResults] = useState<CompetitorSearchResult[]>([])
     const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
 
-    const handleSearch = async (searchQuery?: string, overrideStrategy?: string[]) => {
-        const finalQuery = searchQuery || query
-        if (!finalQuery) return
+    const handleSearch = async () => {
+        // Construct final query from keywords + current input (if any)
+        const currentInput = query.trim()
+        let activeKeywords = [...keywords]
+
+        if (currentInput && activeKeywords.length < 3) {
+            activeKeywords.push(currentInput)
+        }
+
+        // Add Brazil context to each keyword and separate by comma
+        const searchTerms = activeKeywords.map(k => `${k.trim()} Brasil`).join(", ")
+
+        if (!searchTerms.trim() || activeKeywords.length === 0 && !currentInput) return
 
         setLoading(true)
         setProgress(5)
         setResults([])
 
-        // Use provided keywords or fallback to client's content strategy
-        const strategy = overrideStrategy || (activeClient as any)?.content_strategy || []
+        // Auto-collapse search section
+        setIsSearchExpanded(false)
+
+        // Fallback strategy
+        const strategy = (activeClient as any)?.content_strategy || []
 
         // Simulated progress bar
         const progressInterval = setInterval(() => {
@@ -52,7 +72,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
         }, 800)
 
         try {
-            const data = await searchCompetitors(finalQuery, platform, strategy)
+            const data = await searchCompetitors(searchTerms, platform, strategy)
 
             // Sort by followersCount desc
             const sortedData = [...data]
@@ -60,6 +80,10 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
 
             setResults(sortedData)
             setProgress(100)
+
+            // Clear current input but keep keywords or clear them? 
+            // Usually good to keep context, but let's clear input only
+            setQuery("")
         } catch (error) {
             console.error(error)
         } finally {
@@ -68,26 +92,60 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
         }
     }
 
-    // Auto-search when modal opens if we have client context
+    // Fetch AI suggestions on open
     useEffect(() => {
-        async function runAutoSearch() {
-            if (open && activeClient) {
-                const category = (activeClient as any).category
-                const subCategory = (activeClient as any).sub_category
-                const strategy = (activeClient as any).content_strategy || []
+        async function fetchSuggestions() {
+            if (open && activeClient && suggestedKeywords.length === 0) {
+                setLoadingSuggestions(true)
+                try {
+                    const category = (activeClient as any).category
+                    const subCategory = (activeClient as any).sub_category
+                    const strategy = (activeClient as any).content_strategy || []
 
-                // Generate 3 specialized keywords using Groq
-                const keywords = await generateSearchKeywords(category || "", subCategory || "", strategy)
-
-                const autoQuery = keywords.join(" ") + " Brasil"
-                setQuery(autoQuery)
-
-                // Trigger search with the generated keywords
-                handleSearch(autoQuery, keywords)
+                    // Generate 3 specialized keywords using Groq
+                    const keywords = await generateSearchKeywords(category || "", subCategory || "", strategy)
+                    setSuggestedKeywords(keywords)
+                } catch (error) {
+                    console.error("Failed to fetch suggestions:", error)
+                } finally {
+                    setLoadingSuggestions(false)
+                }
             }
         }
-        runAutoSearch()
-    }, [open])
+        fetchSuggestions()
+    }, [open, activeClient, suggestedKeywords.length])
+
+    const handleAddSuggestion = (keyword: string) => {
+        if (keywords.length >= 3) return
+        setKeywords([...keywords, keyword])
+        setSuggestedKeywords(prev => prev.filter(k => k !== keyword))
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault()
+            const value = query.trim()
+
+            if (value) {
+                if (keywords.length >= 3) {
+                    // Prevent adding more than 3
+                    return
+                }
+                setKeywords([...keywords, value])
+                setQuery("")
+            } else if (e.key === 'Enter') {
+                // If empty input and Enter, trigger search
+                handleSearch()
+            }
+        } else if (e.key === 'Backspace' && !query && keywords.length > 0) {
+            // Remove last tag if input is empty
+            setKeywords(keywords.slice(0, -1))
+        }
+    }
+
+    const removeKeyword = (indexToRemove: number) => {
+        setKeywords(keywords.filter((_, index) => index !== indexToRemove))
+    }
 
     const handleAdd = async (competitor: CompetitorSearchResult) => {
         await addProfile({
@@ -102,44 +160,112 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col transition-all duration-300">
+                <DialogHeader className="space-y-1">
                     <DialogTitle>Descobrir Concorrentes com IA</DialogTitle>
-                    <DialogDescription>
-                        Buscamos perfis no {platform === 'instagram' ? 'Instagram' : 'TikTok'} baseados no nicho do seu cliente.
-                    </DialogDescription>
+                    <div className="flex items-center justify-between">
+                        <DialogDescription>
+                            Buscamos perfis no Instagram baseados no nicho do seu cliente.
+                        </DialogDescription>
+
+                        {!isSearchExpanded && keywords.length > 0 && (
+                            <div className="flex gap-1 ml-4 overflow-hidden">
+                                {keywords.map((k, i) => (
+                                    <Badge key={i} variant="secondary" className="h-5 text-[10px] px-1.5">{k}</Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                            className="h-6 w-6 p-0 ml-auto shrink-0 rounded-full hover:bg-muted"
+                        >
+                            {isSearchExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </DialogHeader>
 
-                <div className="flex gap-4 py-4 items-end">
-                    <div className="flex-1 space-y-2">
+                {isSearchExpanded && (
+                    <div className="py-4 space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
                         <Label>Termo de Busca</Label>
-                        <div className="relative">
-                            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Ex: Moda Sustentável, Academia..."
-                                className="pl-9"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            />
+                        <div className="flex gap-4">
+                            <div className="relative flex-1 group">
+                                <div className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground z-10 pointer-events-none">
+                                    <SearchIcon className="h-4 w-4" />
+                                </div>
+
+                                {/* Tagged Input Container */}
+                                <div className="flex flex-wrap gap-1.5 min-h-[40px] w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+                                    {keywords.map((keyword, index) => (
+                                        <Badge key={index} className="gap-1 pr-1 h-7 bg-blue-600 hover:bg-blue-700 text-white animate-in fade-in zoom-in duration-200">
+                                            {keyword}
+                                            <button
+                                                onClick={() => removeKeyword(index)}
+                                                className="ml-0.5 hover:bg-blue-800 rounded-full p-0.5"
+                                            >
+                                                <X className="h-3 w-3" />
+                                                <span className="sr-only">Remover</span>
+                                            </button>
+                                        </Badge>
+                                    ))}
+                                    <input
+                                        className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px]"
+                                        placeholder={keywords.length === 0 ? "Ex: Moda Sustentável..." : ""}
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        disabled={keywords.length >= 3}
+                                    />
+                                </div>
+                            </div>
+                            <div className="w-[140px]">
+                                <Button
+                                    onClick={() => handleSearch()}
+                                    disabled={loading || (keywords.length === 0 && !query.trim())}
+                                    className="bg-primary text-primary-foreground w-full"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                                </Button>
+                            </div>
                         </div>
+
+                        <p className="text-[9px] text-muted-foreground mt-1">
+                            Digite e pressione <strong>Enter</strong> para criar uma tag. Recomendamos usar <strong>2 palavras-chave</strong> (máximo 3).
+                        </p>
+
+                        {/* AI Suggestions Area */}
+                        {(suggestedKeywords.length > 0 || loadingSuggestions) && (
+                            <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <Label className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
+                                    <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-medium">IA</span>
+                                    Sugestões baseadas no perfil:
+                                </Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {loadingSuggestions ? (
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="h-6 w-20 bg-muted animate-pulse rounded-full" />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        suggestedKeywords.map((keyword, i) => (
+                                            <Badge
+                                                key={i}
+                                                variant="outline"
+                                                className="cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors border-dashed"
+                                                onClick={() => handleAddSuggestion(keyword)}
+                                            >
+                                                + {keyword}
+                                            </Badge>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div className="w-[140px] space-y-2">
-                        <Label>Plataforma</Label>
-                        <Select value={platform} onValueChange={(v: any) => setPlatform(v)}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="instagram">Instagram</SelectItem>
-                                <SelectItem value="tiktok">TikTok</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Button onClick={() => handleSearch()} disabled={loading || !query} className="bg-primary text-primary-foreground">
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
-                    </Button>
-                </div>
+                )}
 
                 {loading && (
                     <div className="space-y-2 pb-4">
@@ -175,21 +301,36 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                         <div key={competitor.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <Avatar className="h-10 w-10 shrink-0">
-                                    <AvatarImage src={competitor.avatarUrl} referrerPolicy="no-referrer" />
+                                    <AvatarImage
+                                        src={competitor.avatarUrl}
+                                        referrerPolicy="no-referrer"
+                                        crossOrigin="anonymous"
+                                        alt={competitor.username}
+                                    />
                                     <AvatarFallback className="bg-primary/10 text-primary">{competitor.username[0].toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0 flex-1 pr-2">
                                     <div className="flex items-center gap-2 mb-0.5">
-                                        <div className="font-medium truncate underline-offset-4">{competitor.fullName || competitor.username}</div>
-                                        {competitor.followersCount && (
-                                            <Badge variant="secondary" className="text-[10px] h-4 px-1 shrink-0 whitespace-nowrap">
-                                                {competitor.followersCount > 1000000
-                                                    ? `${(competitor.followersCount / 1000000).toFixed(1)}M`
-                                                    : competitor.followersCount > 1000
-                                                        ? `${(competitor.followersCount / 1000).toFixed(0)}K`
-                                                        : competitor.followersCount} seguidores
-                                            </Badge>
-                                        )}
+                                        <div className="font-medium truncate underline-offset-4 flex items-center gap-1">
+                                            {competitor.fullName || competitor.username}
+                                            {competitor.isVerified && <BadgeCheck className="h-4 w-4 text-blue-500 fill-blue-500/10" />}
+                                        </div>
+                                        <div className="flex gap-1">
+                                            {competitor.followersCount !== undefined && (
+                                                <Badge variant="secondary" className="text-[10px] h-4 px-1 shrink-0 whitespace-nowrap">
+                                                    {competitor.followersCount > 1000000
+                                                        ? `${(competitor.followersCount / 1000000).toFixed(1)}M`
+                                                        : competitor.followersCount > 1000
+                                                            ? `${(competitor.followersCount / 1000).toFixed(0)}K`
+                                                            : competitor.followersCount} seguidores
+                                                </Badge>
+                                            )}
+                                            {competitor.postsCount !== undefined && (
+                                                <Badge variant="outline" className="text-[10px] h-4 px-1 shrink-0 whitespace-nowrap">
+                                                    {competitor.postsCount} posts
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="text-sm text-muted-foreground truncate">@{competitor.username}</div>
                                 </div>

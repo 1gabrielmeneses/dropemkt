@@ -5,6 +5,73 @@ import { Database } from "@/lib/supabase/types"
 
 export type Marker = Database['public']['Tables']['content_markers']['Row']
 
+/**
+ * Ensures a content item exists in the `content_items` table (migrating from `posts_salvos` if needed).
+ * If the input ID is a valid UUID, it assumes it's already a `content_item`.
+ * If it's a number (legacy), it looks up the original post and duplicates it to `content_items` or finds an existing match.
+ */
+export async function ensureContentItem(
+    legacyIdOrUuid: string | number,
+    itemData?: {
+        title: string,
+        url: string,
+        thumbnail_url: string,
+        platform: string,
+        client_id: string,
+        views?: number,
+        likes?: number
+    }
+) {
+    const supabase = await createClient()
+
+    // If it's already a UUID, assume it's valid
+    if (typeof legacyIdOrUuid === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(legacyIdOrUuid)) {
+        return { success: true, id: legacyIdOrUuid }
+    }
+
+    // It's a legacy numeric ID (or we treat it as such for migration)
+    // First, check if we already have this URL in content_items for this client
+    if (itemData?.url) {
+        const { data: existing } = await supabase
+            .from('content_items')
+            .select('id')
+            .eq('client_id', itemData.client_id)
+            .eq('url', itemData.url)
+            .single()
+
+        if (existing) {
+            return { success: true, id: existing.id }
+        }
+    }
+
+    // Not found, create it
+    if (!itemData) {
+        return { success: false, error: "Missing item data for migration" }
+    }
+
+    const { data: newItem, error } = await supabase
+        .from('content_items')
+        .insert({
+            client_id: itemData.client_id,
+            title: itemData.title,
+            url: itemData.url,
+            thumbnail_url: itemData.thumbnail_url,
+            platform: itemData.platform,
+            views: itemData.views || 0,
+            likes: itemData.likes || 0,
+            is_saved: true
+        })
+        .select()
+        .single()
+
+    if (error || !newItem) {
+        console.error("Error migrating content item:", error)
+        return { success: false, error: error?.message || 'Failed to create content item' }
+    }
+
+    return { success: true, id: newItem.id }
+}
+
 export async function createMarker(clientId: string, name: string, description: string, color: string) {
     const supabase = await createClient()
 

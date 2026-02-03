@@ -61,14 +61,35 @@ export const useStore = create<AppState>((set, get) => ({
         // In a larger app, we would fetch these only for the active client
         const { data: profiles } = await supabase.from('tracked_profiles').select('*')
         const { data: content } = await supabase.from('content_items').select('*')
+        const { data: legacyContent } = await supabase.from('posts_salvos').select('*')
         const { data: events } = await supabase.from('calendar_events').select('*')
 
-        const clientsWithData = clients.map(client => ({
-            ...client,
-            profiles: profiles?.filter(p => p.client_id === client.id) || [],
-            savedContent: content?.filter(c => c.client_id === client.id) || [],
-            calendarEvents: events?.filter(e => e.client_id === client.id) || []
-        }))
+        const clientsWithData = clients.map(client => {
+            const clientContent = content?.filter(c => c.client_id === client.id) || []
+            const clientLegacyContent = legacyContent?.filter(c => c.client_id === client.id) || []
+
+            // Map legacy content to ContentItemRow structure
+            const mappedLegacyContent: ContentItemRow[] = clientLegacyContent.map(item => ({
+                id: item.id.toString(), // Convert number ID to string
+                client_id: item.client_id || client.id,
+                created_at: item.created_at,
+                platform: (item.tipoPost || 'instagram').toLowerCase(),
+                title: item.legendaPost || 'Sem título',
+                url: item.urlPost,
+                thumbnail_url: item.thumbnailurl,
+                views: item.viewCount ? parseInt(item.viewCount.replace(/[^0-9]/g, '')) : 0,
+                likes: item.likesCount || 0,
+                is_saved: true,
+                published_at: null
+            }))
+
+            return {
+                ...client,
+                profiles: profiles?.filter(p => p.client_id === client.id) || [],
+                savedContent: [...clientContent, ...mappedLegacyContent],
+                calendarEvents: events?.filter(e => e.client_id === client.id) || []
+            }
+        })
 
         set({
             clients: clientsWithData,

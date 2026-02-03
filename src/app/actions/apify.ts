@@ -42,23 +42,36 @@ export async function searchCompetitors(
         let items: any[] = []
 
         if (platform === 'instagram') {
-            // Using apify/instagram-search-scraper
-            const run = await apifyClient.actor('apify/instagram-search-scraper').call({
-                searchQueries: [query],
-                searchType: 'user',
-                resultsLimit: 10,
-                search: strategy.length > 0
-                    ? strategy.map(s => s.toLowerCase().split(/\s+/).filter(w => w.length > 2).join(", ")).join(", ")
-                    : query,
+            // Using n8n webhook for search
+            const webhookUrl = 'https://autowebhook.maxmizeai.com/webhook/eaeb8169-e863-406c-a645-5f5163dd714a';
+
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    search: query
+                }),
+                cache: 'no-store'
             });
 
-            const { items: datasetItems } = await apifyClient.dataset(run.defaultDatasetId).listItems();
-            items = datasetItems
+            if (!response.ok) {
+                throw new Error(`Webhook failed with status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Assume webhook returns items directly or { items: [...] } or similar structure
+            // Adjust based on typical n8n output. Usually it returns the JSON array or object
+            // If it returns { "results": [...] } or just [...]
+            items = Array.isArray(data) ? data : (data.items || data.results || []);
+
         } else {
             // Using clockworks/tiktok-search-scraper
             const run = await apifyClient.actor('clockworks/tiktok-search-scraper').call({
                 search: query,
-                resultsPerPage: 10,
+                resultsPerPage: 30,
             });
             const { items: datasetItems } = await apifyClient.dataset(run.defaultDatasetId).listItems();
             items = datasetItems
@@ -69,9 +82,11 @@ export async function searchCompetitors(
             return items.map((item: any) => ({
                 id: item.id || item.username,
                 username: item.username,
-                fullName: item.full_name || item.fullName || item.username,
-                avatarUrl: item.profilePicUrlHD || item.profile_pic_url_hd || item.profilePicUrl || item.profile_pic_url || item.avatarUrl || '',
+                fullName: item.full_name || item.fullName || item.username, // Webhook might not return fullName, fallback to username
+                avatarUrl: item.profilePicUrl || item.profile_pic_url || item.avatarUrl || '',
                 followersCount: item.followersCount || item.followers_count || undefined,
+                postsCount: item.postsCount || item.posts_count || undefined,
+                isVerified: item.verified ?? item.is_verified ?? item.isVerified ?? false,
                 platform: 'instagram' as const,
                 profileUrl: `https://instagram.com/${item.username}`
             })).filter(i => i.username);
@@ -87,9 +102,13 @@ export async function searchCompetitors(
             })).filter(i => i.username !== 'unknown');
         }
 
-    } catch (error) {
-        console.error("Apify Search Error:", error)
-        throw new Error("Failed to search competitors")
+    } catch (error: any) {
+        console.error("Apify Search Error DETAILS:", JSON.stringify(error, null, 2))
+        if (error instanceof Error) {
+            console.error("Apify Search Error Message:", error.message)
+            console.error("Apify Search Error Stack:", error.stack)
+        }
+        throw new Error(`Failed to search competitors: ${error?.message || "Unknown error"}`)
     }
 }
 

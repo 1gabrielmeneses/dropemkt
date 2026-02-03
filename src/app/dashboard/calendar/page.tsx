@@ -4,8 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, parseISO } from "date-fns"
 import { useStore } from "@/store/useStore"
-import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, GripVertical, Plus, MoreHorizontal, Pencil, Trash } from "lucide-react"
+import { cn, getEmbedUrl } from "@/lib/utils"
+import { ChevronLeft, ChevronRight, GripVertical, Plus, MoreHorizontal, Pencil, Trash, Eye, Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { createMarker, getMarkers, updateMarker, deleteMarker, Marker, createCalendarEvent, getCalendarEvents, deleteCalendarEvent, updateEventRecurrence } from "@/app/actions/calendar"
 import { toast } from "sonner"
 import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { Database } from "@/lib/supabase/types"
 
 const MARKER_COLORS = [
     "#FEF3C7", // Amber (Yellow)
@@ -29,6 +30,83 @@ const MARKER_COLORS = [
 ]
 
 type CalendarEvent = Awaited<ReturnType<typeof getCalendarEvents>>[number]
+type ContentItem = Database['public']['Tables']['content_items']['Row']
+
+function DraggablePost({ content, onPlay }: { content: ContentItem, onPlay: (url: string) => void }) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `post-source-${content.id}`,
+        data: { content, type: 'post-source' }
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            className={cn(
+                "group relative aspect-[9/16] rounded-md overflow-hidden bg-black shadow-sm ring-1 ring-border hover:ring-primary/50 transition-all cursor-grab active:cursor-grabbing select-none",
+                isDragging ? "opacity-30 start-dragging" : "opacity-100"
+            )}
+        >
+            {/* Video Cover (Iframe Hack) */}
+            <div className="w-full h-full pointer-events-none relative">
+                {content.url ? (
+                    <div className="absolute inset-0 flex items-center justify-center transform scale-[1.7]">
+                        <iframe
+                            src={getEmbedUrl(content.url)}
+                            className="w-full h-full object-cover"
+                            frameBorder="0"
+                            scrolling="no"
+                            allow="encrypted-media"
+                            tabIndex={-1}
+                        />
+                    </div>
+                ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <span className="text-muted-foreground text-xs">Sem vídeo</span>
+                    </div>
+                )}
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+            </div>
+
+            {/* Play Button Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                    size="icon"
+                    className="rounded-full w-10 h-10 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white border-2 border-white/50"
+                    onPointerDown={(e) => {
+                        e.stopPropagation();
+                        // Prevent drag start on button
+                    }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (content.url) onPlay(content.url);
+                    }}
+                >
+                    <Play className="h-5 w-5 ml-0.5 fill-white" />
+                </Button>
+            </div>
+
+            {/* Platform Badge */}
+            <div className="absolute top-2 left-2 pointer-events-none">
+                <div className={cn(
+                    "text-[8px] uppercase font-bold px-1.5 py-0.5 rounded text-white backdrop-blur-md shadow-sm",
+                    content.platform === 'tiktok' ? "bg-black/80" : "bg-pink-600/80"
+                )}>
+                    {content.platform === 'tiktok' ? 'TikTok' : 'Insta'}
+                </div>
+            </div>
+
+            {/* Title on bottom (Minimal) */}
+            <div className="absolute bottom-0 left-0 right-0 p-2 pointer-events-none">
+                <p className="text-[9px] text-white/90 line-clamp-2 font-medium leading-tight drop-shadow-md">
+                    {content.title}
+                </p>
+            </div>
+        </div>
+    )
+}
 
 function DraggableMarker({ marker, onClick, onEdit, onDelete }: { marker: Marker, onClick?: () => void, onEdit: (m: Marker) => void, onDelete: (id: number) => void }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -76,12 +154,13 @@ function DraggableMarker({ marker, onClick, onEdit, onDelete }: { marker: Marker
     )
 }
 
-function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent }: {
+function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent, onPlayVideo }: {
     day: Date,
     currentDate: Date,
     events: CalendarEvent[],
     onDeleteEvent: (id: string) => void,
-    onEditEvent: (event: CalendarEvent) => void
+    onEditEvent: (event: CalendarEvent) => void,
+    onPlayVideo: (url: string) => void
 }) {
     const dateStr = format(day, 'yyyy-MM-dd');
     const { setNodeRef, isOver } = useDroppable({
@@ -114,24 +193,51 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent }: {
                 {events.map(event => (
                     <div
                         key={event.id}
-                        className="text-[10px] p-1.5 rounded shadow-sm relative group/event transition-all hover:scale-[1.02] cursor-default"
-                        style={{ backgroundColor: event.marker?.color || '#fff' }}
-                        title={event.marker?.description || ''}
+                        className="text-[10px] p-1.5 rounded shadow-sm relative group/event transition-all hover:scale-[1.02] cursor-default flex items-center justify-between gap-1 overflow-hidden"
+                        style={{ backgroundColor: event.marker?.color || (event.content_item ? '#f1f5f9' : '#fff') }}
+                        title={event.marker?.description || event.content_item?.title || ''}
                     >
-                        <p className="font-semibold text-slate-800 line-clamp-2 leading-tight">
-                            {event.marker?.name || 'Evento'}
-                        </p>
-                        <div className="absolute -top-1 -right-1 flex gap-0.5 opacity-0 group-hover/event:opacity-100 transition-opacity">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEditEvent(event);
-                                }}
-                                className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
-                                title="Editar recorrência"
-                            >
-                                <Pencil className="h-2 w-2" />
-                            </button>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            {/* Color indicator for posts */}
+                            {event.content_item && (
+                                <div className={cn(
+                                    "w-1.5 h-1.5 rounded-full shrink-0",
+                                    event.content_item.platform === 'tiktok' ? "bg-black" : "bg-pink-600"
+                                )} />
+                            )}
+
+                            <p className="font-semibold text-slate-800 line-clamp-1 leading-tight truncate">
+                                {event.content_item?.title || event.marker?.name || 'Evento'}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-0.5 opacity-0 group-hover/event:opacity-100 transition-opacity">
+                            {event.content_item?.url && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onPlayVideo(event.content_item!.url!);
+                                    }}
+                                    className="bg-black/80 hover:bg-black text-white rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
+                                    title="Ver vídeo"
+                                >
+                                    <Eye className="h-2 w-2" />
+                                </button>
+                            )}
+
+                            {!event.content_item && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEditEvent(event);
+                                    }}
+                                    className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
+                                    title="Editar recorrência"
+                                >
+                                    <Pencil className="h-2 w-2" />
+                                </button>
+                            )}
+
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -151,7 +257,7 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent }: {
 }
 
 export default function CalendarPage() {
-    const { getActiveClient } = useStore()
+    const { getActiveClient, addToCalendar } = useStore()
     const activeClient = getActiveClient()
     const [currentDate, setCurrentDate] = useState(new Date())
 
@@ -168,7 +274,7 @@ export default function CalendarPage() {
 
     // Calendar Events State
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
-    const [activeDragItem, setActiveDragItem] = useState<Marker | null>(null)
+    const [activeDragItem, setActiveDragItem] = useState<{ type: string, data: any } | null>(null)
 
     // Event Recurrence Edit State
     const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false)
@@ -178,6 +284,9 @@ export default function CalendarPage() {
     // Delete Confirmation State
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
     const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null)
+
+    // Video Playback State
+    const [videoUrl, setVideoUrl] = useState<string | null>(null)
 
     // Fallback if no client selected
     const savedContent = activeClient?.savedContent || []
@@ -244,8 +353,12 @@ export default function CalendarPage() {
     // Drag and Drop Handlers
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
-        if (active.data.current?.type === 'marker-source') {
-            setActiveDragItem(active.data.current.marker);
+        const type = active.data.current?.type;
+
+        if (type === 'marker-source') {
+            setActiveDragItem({ type, data: active.data.current?.marker });
+        } else if (type === 'post-source') {
+            setActiveDragItem({ type, data: active.data.current?.content });
         }
     }
 
@@ -258,8 +371,15 @@ export default function CalendarPage() {
         const dateStr = over.id as string;
         if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return;
 
-        if (active.data.current?.type === 'marker-source') {
-            const marker = active.data.current.marker as Marker;
+        // Determine what was dropped
+        const type = active.data.current?.type;
+
+        // Construct date at noon local time to avoid timezone issues
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const localDate = new Date(year, month - 1, day, 12, 0, 0);
+
+        if (type === 'marker-source') {
+            const marker = active.data.current?.marker as Marker;
 
             // Optimistic update
             const tempId = `temp-${Date.now()}`;
@@ -278,10 +398,6 @@ export default function CalendarPage() {
 
             setCalendarEvents(prev => [...prev, optimisticEvent]);
 
-            // Construct date at noon local time to avoid timezone issues
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const localDate = new Date(year, month - 1, day, 12, 0, 0);
-
             const result = await createCalendarEvent(activeClient.id, localDate.toISOString(), marker.id);
 
             if (result.success && result.events) {
@@ -291,6 +407,55 @@ export default function CalendarPage() {
             } else {
                 setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
                 toast.error("Erro ao agendar marcador");
+            }
+        } else if (type === 'post-source') {
+            const content = active.data.current?.content as ContentItem;
+
+            // Optimistic update
+            const tempId = `temp-${Date.now()}`;
+            // Optimistic event structure
+            const optimisticEvent: any = {
+                id: tempId,
+                client_id: activeClient.id,
+                scheduled_at: dateStr,
+                marker_id: null,
+                content_item_id: content.id, // This might be legacy numeric ID temporarily
+                status: 'scheduled',
+                created_at: new Date().toISOString(),
+                notes: null,
+                marker: null,
+                content_item: content
+            };
+
+            setCalendarEvents(prev => [...prev, optimisticEvent]);
+
+            // Ensure content exists in content_items (migration)
+            const ensured = await ensureContentItem(content.id, {
+                title: content.title,
+                url: content.url!,
+                thumbnail_url: content.thumbnail_url!,
+                platform: content.platform,
+                client_id: activeClient.id,
+                views: content.views || 0,
+                likes: content.likes || 0
+            });
+
+            if (!ensured.success || !ensured.id) {
+                setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
+                toast.error("Erro ao migrar conteúdo para agendamento");
+                return;
+            }
+
+            // Create event with VALID Content Item UUID
+            const result = await createCalendarEvent(activeClient.id, localDate.toISOString(), undefined, ensured.id);
+
+            if (result.success && result.events) {
+                const freshEvents = await getCalendarEvents(activeClient.id) || []
+                setCalendarEvents(freshEvents as CalendarEvent[])
+                toast.success("Conteúdo agendado!");
+            } else {
+                setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
+                toast.error("Erro ao agendar conteúdo");
             }
         }
     }
@@ -417,6 +582,7 @@ export default function CalendarPage() {
                                     events={calendarEvents.filter(e => isSameDay(parseISO(e.scheduled_at), day))}
                                     onDeleteEvent={handleDeleteEvent}
                                     onEditEvent={handleEditEvent}
+                                    onPlayVideo={setVideoUrl}
                                 />
                             ))}
                         </div>
@@ -425,14 +591,14 @@ export default function CalendarPage() {
                     {/* Sidebar draggable items */}
                     <div className="w-96 flex flex-col gap-4">
                         <Card className="flex-1 flex flex-col shadow-sm border-dashed">
-                            <CardHeader className="pb-3 border-b bg-muted/10">
+                            <CardHeader className="py-2 px-4 border-b bg-muted/10">
                                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                                     Conteúdo agendado
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="flex-1 overflow-auto p-4 bg-muted/5">
+                            <CardContent className="flex-1 overflow-auto p-2 bg-muted/5">
                                 <Tabs defaultValue="marcadores" className="w-full h-full flex flex-col">
-                                    <TabsList className="w-full grid grid-cols-2 mb-4">
+                                    <TabsList className="w-full grid grid-cols-2 mb-2">
                                         <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
                                         <TabsTrigger value="marcadores">Marcadores</TabsTrigger>
                                     </TabsList>
@@ -449,23 +615,7 @@ export default function CalendarPage() {
                                         ) : (
                                             <div className="grid grid-cols-2 gap-3">
                                                 {savedContent.map(content => (
-                                                    <div key={content.id} className="group p-3 border rounded-lg bg-card shadow-sm hover:shadow-md transition-all cursor-move flex flex-col gap-2 select-none">
-                                                        {content.thumbnail_url && (
-                                                            <div className="w-full aspect-video rounded overflow-hidden bg-muted">
-                                                                <img
-                                                                    src={content.thumbnail_url}
-                                                                    alt={content.title || 'Conteúdo'}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-medium text-sm line-clamp-2 leading-tight mb-1">{content.title}</p>
-                                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                                                {content.platform} • {content.views?.toLocaleString()} views
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                    <DraggablePost key={content.id} content={content} onPlay={setVideoUrl} />
                                                 ))}
                                             </div>
                                         )}
@@ -475,14 +625,14 @@ export default function CalendarPage() {
                                         <div className="grid grid-cols-3 gap-3 align-start content-start">
                                             <Dialog open={isCreateMarkerOpen} onOpenChange={setIsCreateMarkerOpen}>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="outline" className="aspect-square w-full flex flex-col items-center justify-center gap-1 border-dashed hover:border-solid bg-transparent">
+                                                    <Button variant="outline" className="aspect-square w-full h-auto flex flex-col items-center justify-center gap-1 border-dashed hover:border-solid bg-transparent">
                                                         <Plus className="h-5 w-5" />
                                                         <span className="text-xs">Novo</span>
                                                     </Button>
                                                 </DialogTrigger>
                                                 <DialogContent>
-<DialogHeader>
-                                                    <DialogTitle>Criar novo marcador</DialogTitle>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Criar novo marcador</DialogTitle>
                                                     </DialogHeader>
                                                     <div className="grid gap-4 py-4">
                                                         <div className="grid gap-2">
@@ -592,16 +742,42 @@ export default function CalendarPage() {
                 </DialogContent>
             </Dialog>
 
+            <Dialog open={!!videoUrl} onOpenChange={(open) => !open && setVideoUrl(null)}>
+                <DialogContent className="max-w-[400px] p-0 overflow-hidden bg-black border-none aspect-[9/16] max-h-[85vh]">
+                    {videoUrl && (
+                        <div className="w-full h-full relative">
+                            {/* Loading State or Iframe */}
+                            <iframe
+                                src={getEmbedUrl(videoUrl)}
+                                className="w-full h-full object-cover"
+                                frameBorder="0"
+                                scrolling="no"
+                                allow="encrypted-media; autoplay"
+                                allowFullScreen
+                            />
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             <DragOverlay>
                 {activeDragItem ? (
-                    <div
-                        className="aspect-square w-24 rounded-md p-2 flex flex-col items-center justify-center text-center shadow-lg ring-2 ring-primary opacity-90"
-                        style={{ backgroundColor: activeDragItem.color }}
-                    >
-                        <span className="text-xs font-semibold text-slate-800 line-clamp-3 leading-tight break-words">
-                            {activeDragItem.name}
-                        </span>
-                    </div>
+                    activeDragItem.type === 'marker-source' ? (
+                        <div
+                            className="aspect-square w-24 rounded-md p-2 flex flex-col items-center justify-center text-center shadow-lg ring-2 ring-primary opacity-90"
+                            style={{ backgroundColor: activeDragItem.data.color }}
+                        >
+                            <span className="text-xs font-semibold text-slate-800 line-clamp-3 leading-tight break-words">
+                                {activeDragItem.data.name}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="w-32 aspect-[9/16] rounded-md overflow-hidden shadow-lg ring-2 ring-primary opacity-90 relative bg-black">
+                            {activeDragItem.data.thumbnail_url && (
+                                <img src={activeDragItem.data.thumbnail_url} className="w-full h-full object-cover" />
+                            )}
+                        </div>
+                    )
                 ) : null}
             </DragOverlay>
         </DndContext>

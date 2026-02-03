@@ -307,8 +307,26 @@ export default function DiscoveryPage() {
                 </div>
             )}
 
+            {/* Search Loading State */}
+            {isSearching && (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-in fade-in duration-300">
+                    <div className="relative">
+                        <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
+                        <div className="bg-primary/10 p-4 rounded-full">
+                            <Search className="h-8 w-8 text-primary animate-pulse" />
+                        </div>
+                    </div>
+                    <div className="text-center space-y-2">
+                        <h3 className="text-lg font-semibold">Buscando novos vídeos...</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Isto pode levar alguns segundos.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Empty State */}
-            {!loading && filteredReels.length === 0 && (
+            {!loading && !isSearching && filteredReels.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                     <div className="text-6xl">🔍</div>
                     <div>
@@ -323,7 +341,7 @@ export default function DiscoveryPage() {
             )}
 
             {/* Reels Grid */}
-            {!loading && filteredReels.length > 0 && (
+            {!loading && !isSearching && filteredReels.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {filteredReels.map((reel) => (
                         <ReelCard
@@ -453,25 +471,8 @@ export default function DiscoveryPage() {
                 }}
             />
 
-            {/* Search Loading Overlay */}
-            {isSearching && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-                    <div className="flex flex-col items-center gap-4 p-6 bg-card rounded-lg shadow-lg border animate-in fade-in zoom-in duration-300">
-                        <div className="relative">
-                            <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
-                            <div className="bg-primary/10 p-4 rounded-full">
-                                <Search className="h-8 w-8 text-primary animate-pulse" />
-                            </div>
-                        </div>
-                        <div className="text-center space-y-2">
-                            <h3 className="text-lg font-semibold">Buscando conteúdo viral</h3>
-                            <p className="text-sm text-muted-foreground max-w-[250px]">
-                                Analisando tendências e encontrando os melhores vídeos para você...
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Search Loading Overlay Removed */}
+
         </div>
     )
 }
