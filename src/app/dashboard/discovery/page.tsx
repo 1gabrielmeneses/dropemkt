@@ -239,11 +239,11 @@ export default function DiscoveryPage() {
                             {/* Tagged Input Container */}
                             <div className="flex flex-wrap gap-1.5 min-h-[40px] w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                                 {keywords.map((keyword, index) => (
-                                    <Badge key={index} variant="secondary" className="gap-1 pr-1 h-7">
+                                    <Badge key={index} className="gap-1 pr-1 h-7 bg-blue-600 hover:bg-blue-700 text-white">
                                         {keyword}
                                         <button
                                             onClick={() => removeKeyword(index)}
-                                            className="ml-0.5 hover:bg-muted rounded-full p-0.5"
+                                            className="ml-0.5 hover:bg-blue-800 rounded-full p-0.5"
                                         >
                                             <X className="h-3 w-3" />
                                             <span className="sr-only">Remover</span>

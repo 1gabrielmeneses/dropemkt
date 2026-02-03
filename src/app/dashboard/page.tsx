@@ -13,10 +13,11 @@ import { DemographicsChart } from "@/components/dashboard/analytics/Demographics
 import { ActiveHoursChart } from "@/components/dashboard/analytics/ActiveHoursChart"
 import { TopContentList } from "@/components/dashboard/analytics/TopContentList"
 import { CompetitorDiscoveryModal } from "@/components/dashboard/CompetitorDiscoveryModal"
-import { getSavedPosts, removePost } from "@/app/actions/discovery"
-import { WebhookReelData } from "@/app/actions/webhook"
+import { getSavedPosts, removePost, getSavedScripts, saveScript, removeSavedScript } from "@/app/actions/discovery"
+import { WebhookReelData, triggerScriptWebhook } from "@/app/actions/webhook"
 import { ReelCard } from "@/components/discovery/ReelCard"
 import { VideoModal } from "@/components/discovery/VideoModal"
+import { ScriptModal } from "@/components/discovery/ScriptModal"
 import { toast } from "sonner"
 
 export default function DashboardPage() {
@@ -30,10 +31,22 @@ export default function DashboardPage() {
     const [videoModalOpen, setVideoModalOpen] = useState(false)
     const [selectedVideoUrl, setSelectedVideoUrl] = useState("")
 
+    // Script State
+    const [savedScripts, setSavedScripts] = useState<Record<string, string>>({})
+    const [scriptModalOpen, setScriptModalOpen] = useState(false)
+    const [selectedScriptVideoUrl, setSelectedScriptVideoUrl] = useState("")
+    const [selectedScriptReel, setSelectedScriptReel] = useState<WebhookReelData | null>(null)
+    const [scriptContent, setScriptContent] = useState<string>("")
+    const [scriptLoading, setScriptLoading] = useState(false)
+
     useEffect(() => {
         if (activeClient) {
-            getSavedPosts(activeClient.id).then(posts => {
+            Promise.all([
+                getSavedPosts(activeClient.id),
+                getSavedScripts(activeClient.id)
+            ]).then(([posts, scripts]) => {
                 setSavedPosts(posts)
+                setSavedScripts(scripts)
             })
         }
     }, [activeClient])
@@ -72,8 +85,8 @@ export default function DashboardPage() {
         return (
             <div className="flex h-[50vh] items-center justify-center">
                 <div className="text-center">
-<h2 className="text-2xl font-bold">Nenhum projeto ativo</h2>
-                <p className="text-muted-foreground">Selecione ou crie um projeto na barra lateral.</p>
+                    <h2 className="text-2xl font-bold">Nenhum projeto ativo</h2>
+                    <p className="text-muted-foreground">Selecione ou crie um projeto na barra lateral.</p>
                 </div>
             </div>
         )
@@ -180,6 +193,51 @@ export default function DashboardPage() {
                                         setSelectedVideoUrl(url)
                                         setVideoModalOpen(true)
                                     }}
+                                    onOpenScript={async (reel) => {
+                                        setSelectedScriptVideoUrl(reel.videoUrl)
+                                        setSelectedScriptReel(reel)
+                                        setScriptContent("")
+                                        setScriptModalOpen(true)
+
+                                        if (savedScripts[reel.id]) {
+                                            setScriptContent(savedScripts[reel.id])
+                                            return
+                                        }
+
+                                        setScriptLoading(true)
+
+                                        try {
+                                            const result = await triggerScriptWebhook(reel.id)
+
+                                            if (result.success && result.data) {
+                                                let content = ""
+                                                const data = result.data
+
+                                                const extractText = (obj: any): string => {
+                                                    if (!obj) return ""
+                                                    if (typeof obj === 'string') return obj
+                                                    if (Array.isArray(obj)) return obj.length > 0 ? extractText(obj[0]) : ""
+                                                    if (obj.content?.parts?.[0]?.text) return obj.content.parts[0].text
+                                                    if (obj.output) return extractText(obj.output)
+                                                    if (obj.script) return extractText(obj.script)
+                                                    if (obj.text) return extractText(obj.text)
+                                                    if (obj.content && typeof obj.content === 'string') return obj.content
+                                                    return JSON.stringify(obj, null, 2)
+                                                }
+
+                                                content = extractText(data)
+                                                setScriptContent(content)
+                                                toast.success('Roteiro gerado com sucesso!')
+                                            } else {
+                                                toast.error('Erro ao gerar roteiro')
+                                                setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
+                                            }
+                                        } catch (error) {
+                                            toast.error('Erro ao conectar com o serviço de IA')
+                                        } finally {
+                                            setScriptLoading(false)
+                                        }
+                                    }}
                                 />
                             ))
                         )}
@@ -193,6 +251,45 @@ export default function DashboardPage() {
                 isOpen={videoModalOpen}
                 onClose={() => setVideoModalOpen(false)}
                 videoUrl={selectedVideoUrl}
+            />
+
+            <ScriptModal
+                isOpen={scriptModalOpen}
+                onClose={() => setScriptModalOpen(false)}
+                videoUrl={selectedScriptVideoUrl}
+                scriptContent={scriptContent}
+                isLoading={scriptLoading}
+                isScriptSaved={selectedScriptReel ? !!savedScripts[selectedScriptReel.id] : false}
+                onSaveScript={async () => {
+                    if (!activeClient || !selectedScriptReel || !scriptContent) return
+
+                    toast.loading("Salvando roteiro...", { id: "save-script" })
+                    const result = await saveScript(activeClient.id, selectedScriptReel, scriptContent)
+
+                    if (result.success) {
+                        toast.success("Roteiro salvo!", { id: "save-script" })
+                        setSavedScripts(prev => ({ ...prev, [selectedScriptReel.id]: scriptContent }))
+                    } else {
+                        toast.error("Erro ao salvar roteiro", { id: "save-script" })
+                    }
+                }}
+                onRemoveScript={async () => {
+                    if (!activeClient || !selectedScriptReel) return
+
+                    toast.loading("Removendo roteiro...", { id: "remove-script" })
+                    const result = await removeSavedScript(activeClient.id, selectedScriptReel.id)
+
+                    if (result.success) {
+                        toast.success("Roteiro removido!", { id: "remove-script" })
+                        setSavedScripts(prev => {
+                            const next = { ...prev }
+                            delete next[selectedScriptReel.id]
+                            return next
+                        })
+                    } else {
+                        toast.error("Erro ao remover roteiro", { id: "remove-script" })
+                    }
+                }}
             />
         </div>
     )
