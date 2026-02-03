@@ -46,10 +46,22 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
     const getEmbedUrl = (url: string) => {
         try {
             const urlObj = new URL(url)
+
+            // Instagram Embed
             if (urlObj.hostname.includes('instagram.com')) {
                 const pathname = urlObj.pathname.replace(/\/$/, '')
                 return `${urlObj.origin}${pathname}/embed`
             }
+
+            // TikTok Embed
+            if (urlObj.hostname.includes('tiktok.com')) {
+                // Extract video ID from path: /@username/video/VIDEO_ID
+                const videoIdMatch = urlObj.pathname.match(/video\/(\d+)/)
+                if (videoIdMatch && videoIdMatch[1]) {
+                    return `https://www.tiktok.com/player/v1/${videoIdMatch[1]}?music_info=1&description=1`
+                }
+            }
+
             return url
         } catch (e) {
             return url
@@ -94,8 +106,8 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
 
                     {/* Platform Badge (top left) */}
                     <div className="absolute top-2 left-2">
-                        <Badge className="bg-primary/90 text-primary-foreground capitalize text-xs">
-                            {reel.platform}
+                        <Badge className={`${reel.platform === 'tiktok' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-pink-600 hover:bg-pink-700'} text-white text-xs border-0`}>
+                            {reel.platform === 'tiktok' ? 'TikTok' : 'Instagram'}
                         </Badge>
                     </div>
                 </div>

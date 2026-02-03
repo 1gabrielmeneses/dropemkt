@@ -56,6 +56,7 @@ export async function fetchReelsFromWebhook(usernames: string[]): Promise<Webhoo
     }
 }
 
+
 export async function triggerScriptWebhook(postId: string): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
         console.log('[triggerScriptWebhook] Triggering webhook for post:', postId)
@@ -90,6 +91,35 @@ export async function triggerScriptWebhook(postId: string): Promise<{ success: b
         return { success: true, data }
     } catch (error) {
         console.error("[triggerScriptWebhook] Error:", error)
+        return { success: false, error }
+    }
+}
+
+export async function triggerKeywordSearchWebhook(keywords: string[], clientId: string): Promise<{ success: boolean; data?: any; error?: any }> {
+    try {
+        console.log('[triggerKeywordSearchWebhook] Triggering webhook for keywords:', keywords, 'clientId:', clientId)
+
+        const response = await fetch('https://autowebhook.maxmizeai.com/webhook/806ac6b6-1131-4667-996f-c1e5aa307027', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                keywords: keywords,
+                clientId: clientId
+            })
+        })
+
+        if (!response.ok) {
+            console.error(`[triggerKeywordSearchWebhook] Failed with status: ${response.status} ${response.statusText}`)
+            return { success: false, error: `Status ${response.status}` }
+        }
+
+        const data = await response.json().catch(() => ({ status: 'ok' })); // Fallback if no json response
+        console.log('[triggerKeywordSearchWebhook] Success')
+        return { success: true, data }
+    } catch (error) {
+        console.error("[triggerKeywordSearchWebhook] Error:", error)
         return { success: false, error }
     }
 }

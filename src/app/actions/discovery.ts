@@ -15,6 +15,7 @@ interface ScrapedPost {
     videoCount: number | null
     videoPlayCount: number | null
     displayUrl: string | null
+    plataform: string | null
 }
 
 export async function getScrapedPosts(clientId: string): Promise<WebhookReelData[]> {
@@ -26,7 +27,10 @@ export async function getScrapedPosts(clientId: string): Promise<WebhookReelData
             .from('posts_scaped')
             .select('*')
             .eq('cliente_conectado', clientId)
-            .order('videoPlayCount', { ascending: false }) // Default sorting by views
+            .order('created_at', { ascending: false })
+            .order('videoPlayCount', { ascending: false })
+            .order('likesCount', { ascending: false })
+            .order('commentsCount', { ascending: false })
 
         console.log('[getScrapedPosts] Query results - data count:', data?.length, 'error:', error)
 
@@ -51,8 +55,7 @@ export async function getScrapedPosts(clientId: string): Promise<WebhookReelData
             commentCount: post.commentsCount || 0,
             videoUrl: post.postUrl || '',
             thumbnailUrl: post.displayUrl || '',
-            displayUrl: post.displayUrl || undefined,
-            platform: 'instagram' as const
+            platform: (post.plataform?.toLowerCase() === 'tiktok') ? 'tiktok' : 'instagram'
         }))
 
         console.log('[getScrapedPosts] Returning reels count:', reels.length)

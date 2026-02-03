@@ -11,16 +11,26 @@ interface VideoModalProps {
 export function VideoModal({ isOpen, onClose, videoUrl }: VideoModalProps) {
     if (!videoUrl) return null
 
-    // Ensure we use the embed URL format for Instagram
-    // Transforms https://www.instagram.com/p/ID/ to https://www.instagram.com/p/ID/embed
+    // Ensure we use the embed URL format for Instagram and TikTok
     const getEmbedUrl = (url: string) => {
         try {
             const urlObj = new URL(url)
+
+            // Instagram Embed
             if (urlObj.hostname.includes('instagram.com')) {
-                // Remove trailing slash if present and add /embed
                 const pathname = urlObj.pathname.replace(/\/$/, '')
                 return `${urlObj.origin}${pathname}/embed`
             }
+
+            // TikTok Embed
+            if (urlObj.hostname.includes('tiktok.com')) {
+                // Extract video ID from path: /@username/video/VIDEO_ID
+                const videoIdMatch = urlObj.pathname.match(/video\/(\d+)/)
+                if (videoIdMatch && videoIdMatch[1]) {
+                    return `https://www.tiktok.com/player/v1/${videoIdMatch[1]}?music_info=1&description=1`
+                }
+            }
+
             return url
         } catch (e) {
             return url
@@ -39,7 +49,8 @@ export function VideoModal({ isOpen, onClose, videoUrl }: VideoModalProps) {
                         className="w-full h-full absolute inset-0"
                         frameBorder="0"
                         scrolling="no"
-                        allowTransparency
+                        // @ts-expect-error - React needs lowercase allowtransparency for DOM, but TS expects camelCase
+                        allowtransparency="true"
                         allow="encrypted-media"
                     />
                 </div>

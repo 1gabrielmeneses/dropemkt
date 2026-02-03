@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useStore } from "@/store/useStore"
 import { getScrapedPosts, savePost, removePost, getSavedPostIds, saveScript, removeSavedScript, getSavedScripts } from "@/app/actions/discovery"
-import { WebhookReelData, triggerScriptWebhook } from "@/app/actions/webhook"
+import { WebhookReelData, triggerScriptWebhook, triggerKeywordSearchWebhook } from "@/app/actions/webhook"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Loader2 } from "lucide-react"
 import { VideoModal } from "@/components/discovery/VideoModal"
@@ -24,6 +25,7 @@ export default function DiscoveryPage() {
     const [savedScripts, setSavedScripts] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
+    const [isSearching, setIsSearching] = useState(false)
     const [platform, setPlatform] = useState<string>("all")
     const [matchContext, setMatchContext] = useState(true)
 
@@ -35,49 +37,50 @@ export default function DiscoveryPage() {
     const [scriptContent, setScriptContent] = useState<string>("")
     const [scriptLoading, setScriptLoading] = useState(false)
 
-    useEffect(() => {
-        async function loadReels() {
-            if (!activeClient) {
-                console.log('[DiscoveryPage] No active client')
-                setLoading(false)
-                return
-            }
 
-            console.log('[DiscoveryPage] Loading reels for client:', activeClient.id, activeClient.name)
-
-            try {
-                setLoading(true)
-
-                // Fetch reels from Database for the active client
-                // Parallel fetch for posts and saved status
-                const [fetchedReels, savedIds, savedScriptsMap] = await Promise.all([
-                    getScrapedPosts(activeClient.id),
-                    getSavedPostIds(activeClient.id),
-                    getSavedScripts(activeClient.id)
-                ])
-
-                console.log('[DiscoveryPage] Fetched reels:', fetchedReels.length)
-                console.log('[DiscoveryPage] Saved IDs:', savedIds)
-                console.log('[DiscoveryPage] Saved Scripts:', Object.keys(savedScriptsMap).length)
-
-                setSavedPostIds(new Set(savedIds))
-                setSavedScripts(savedScriptsMap)
-
-                // Sort by view count descending
-                const sortedReels = fetchedReels.sort((a, b) => b.viewCount - a.viewCount)
-                console.log('[DiscoveryPage] Sorted reels:', sortedReels.length)
-
-                setReels(sortedReels)
-                setFilteredReels(sortedReels)
-            } catch (error) {
-                console.error("[DiscoveryPage] Error loading reels:", error)
-            } finally {
-                setLoading(false)
-            }
+    const loadReels = useCallback(async () => {
+        if (!activeClient) {
+            console.log('[DiscoveryPage] No active client')
+            setLoading(false)
+            return
         }
 
-        loadReels()
+        console.log('[DiscoveryPage] Loading reels for client:', activeClient.id, activeClient.name)
+
+        try {
+            setLoading(true)
+
+            // Fetch reels from Database for the active client
+            // Parallel fetch for posts and saved status
+            const [fetchedReels, savedIds, savedScriptsMap] = await Promise.all([
+                getScrapedPosts(activeClient.id),
+                getSavedPostIds(activeClient.id),
+                getSavedScripts(activeClient.id)
+            ])
+
+            console.log('[DiscoveryPage] Fetched reels:', fetchedReels.length)
+            console.log('[DiscoveryPage] Saved IDs:', savedIds)
+            console.log('[DiscoveryPage] Saved Scripts:', Object.keys(savedScriptsMap).length)
+
+            setSavedPostIds(new Set(savedIds))
+            setSavedScripts(savedScriptsMap)
+
+            // Sort by most recent (already sorted from DB)
+            const sortedReels = fetchedReels
+            console.log('[DiscoveryPage] Loaded reels:', sortedReels.length)
+
+            setReels(sortedReels)
+            setFilteredReels(sortedReels)
+        } catch (error) {
+            console.error("[DiscoveryPage] Error loading reels:", error)
+        } finally {
+            setLoading(false)
+        }
     }, [activeClient])
+
+    useEffect(() => {
+        loadReels()
+    }, [loadReels])
 
     // Apply filters
     useEffect(() => {
@@ -88,16 +91,13 @@ export default function DiscoveryPage() {
             filtered = filtered.filter(r => r.platform === platform)
         }
 
-        // Search filter
-        if (searchQuery) {
-            filtered = filtered.filter(r =>
-                r.caption.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                r.username.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-        }
+        /* 
+           Removed local search filtering to prioritize webhook search.
+           The search bar now triggers the webhook to find NEW content.
+        */
 
         setFilteredReels(filtered)
-    }, [searchQuery, platform, reels])
+    }, [platform, reels])
 
     const handleSave = async (reel: WebhookReelData) => {
         if (!activeClient) {
@@ -118,6 +118,47 @@ export default function DiscoveryPage() {
         } catch (error) {
             console.error("Save error:", error)
             toast.error("Erro inesperado ao salvar", { id: "save-post" })
+        }
+    }
+
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) return
+
+        setIsSearching(true)
+        try {
+            // Parse keywords: split by comma or space, filter empty
+            const keywords = searchQuery
+                .split(/[,\s]+/)
+                .map(k => k.trim())
+                .filter(k => k.length > 0)
+
+            if (keywords.length === 0) {
+                setIsSearching(false)
+                return
+            }
+
+            if (!activeClient) {
+                toast.error("Selecione um cliente para realizar a pesquisa")
+                setIsSearching(false)
+                return
+            }
+
+            toast.loading("Buscando novos vídeos no TikTok...", { id: "keyword-search" })
+
+            const result = await triggerKeywordSearchWebhook(keywords, activeClient.id)
+
+            if (result.success) {
+                toast.success("Novos vídeos encontrados! Atualizando feed...", { id: "keyword-search" })
+                setSearchQuery("") // Optional: clear search after success
+                await loadReels() // Refresh data
+            } else {
+                toast.error("Erro ao realizar pesquisa", { id: "keyword-search" })
+            }
+        } catch (error) {
+            console.error("Search error:", error)
+            toast.error("Erro ao realizar pesquisa", { id: "keyword-search" })
+        } finally {
+            setIsSearching(false)
         }
     }
 
@@ -158,14 +199,27 @@ export default function DiscoveryPage() {
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
                 <div className="flex-1 space-y-2">
                     <Label>Buscar por palavras-chave...</Label>
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar por palavras-chave..."
-                            className="pl-9"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Palavras-chave (ex: marketing, viral)"
+                                className="pl-9"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleSearch()
+                                    }
+                                }}
+                            />
+                        </div>
+                        <Button
+                            onClick={handleSearch}
+                            disabled={isSearching || !searchQuery.trim()}
+                        >
+                            {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pesquisar"}
+                        </Button>
                     </div>
                 </div>
                 <div className="w-full md:w-[200px] space-y-2">
