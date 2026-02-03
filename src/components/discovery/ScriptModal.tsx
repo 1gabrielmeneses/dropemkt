@@ -28,16 +28,27 @@ export function ScriptModal({
 }: ScriptModalProps) {
     if (!videoUrl) return null
 
-    // Ensure we use the embed URL format for Instagram
-    // Transforms https://www.instagram.com/p/ID/ to https://www.instagram.com/p/ID/embed
+    // Ensure we use the embed URL format for Instagram and TikTok
     const getEmbedUrl = (url: string) => {
         try {
             const urlObj = new URL(url)
+
+            // Instagram Embed
             if (urlObj.hostname.includes('instagram.com')) {
                 // Remove trailing slash if present and add /embed
                 const pathname = urlObj.pathname.replace(/\/$/, '')
                 return `${urlObj.origin}${pathname}/embed`
             }
+
+            // TikTok Embed
+            if (urlObj.hostname.includes('tiktok.com')) {
+                // Extract video ID from path: /@username/video/VIDEO_ID
+                const videoIdMatch = urlObj.pathname.match(/video\/(\d+)/)
+                if (videoIdMatch && videoIdMatch[1]) {
+                    return `https://www.tiktok.com/player/v1/${videoIdMatch[1]}?music_info=1&description=1`
+                }
+            }
+
             return url
         } catch (e) {
             return url
