@@ -1,19 +1,20 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useStore } from "@/store/useStore"
 import { getScrapedPosts, savePost, removePost, getSavedPostIds, saveScript, removeSavedScript, getSavedScripts } from "@/app/actions/discovery"
 import { WebhookReelData, triggerScriptWebhook, triggerKeywordSearchWebhook } from "@/app/actions/webhook"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Loader2 } from "lucide-react"
+import { Search, Loader2, X } from "lucide-react"
 import { VideoModal } from "@/components/discovery/VideoModal"
 import { ScriptModal } from "@/components/discovery/ScriptModal"
 import { ReelCard } from "@/components/discovery/ReelCard"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 
 export default function DiscoveryPage() {
     const { getActiveClient } = useStore()
@@ -24,7 +25,11 @@ export default function DiscoveryPage() {
     const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set())
     const [savedScripts, setSavedScripts] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(true)
+
+    // Tagged input state
     const [searchQuery, setSearchQuery] = useState("")
+    const [keywords, setKeywords] = useState<string[]>([])
+
     const [isSearching, setIsSearching] = useState(false)
     const [platform, setPlatform] = useState<string>("all")
     const [matchContext, setMatchContext] = useState(true)
@@ -122,21 +127,23 @@ export default function DiscoveryPage() {
     }
 
     const handleSearch = async () => {
-        if (!searchQuery.trim()) return
+        // Use keywords state + current input if any
+        const currentInput = searchQuery.trim()
+        let activeKeywords = [...keywords]
+
+        if (currentInput) {
+            activeKeywords.push(currentInput)
+            // Optional: clear input and add to tags visually? 
+            // For now let's just use it for search but keeping it in input might be confusing if not cleared.
+            // Let's clear it and add to state to be consistent
+            setKeywords(activeKeywords)
+            setSearchQuery("")
+        }
+
+        if (activeKeywords.length === 0) return
 
         setIsSearching(true)
         try {
-            // Parse keywords: split by comma or space, filter empty
-            const keywords = searchQuery
-                .split(/[,\s]+/)
-                .map(k => k.trim())
-                .filter(k => k.length > 0)
-
-            if (keywords.length === 0) {
-                setIsSearching(false)
-                return
-            }
-
             if (!activeClient) {
                 toast.error("Selecione um cliente para realizar a pesquisa")
                 setIsSearching(false)
@@ -145,11 +152,10 @@ export default function DiscoveryPage() {
 
             toast.loading("Buscando novos vídeos no TikTok...", { id: "keyword-search" })
 
-            const result = await triggerKeywordSearchWebhook(keywords, activeClient.id)
+            const result = await triggerKeywordSearchWebhook(activeKeywords, activeClient.id)
 
             if (result.success) {
                 toast.success("Novos vídeos encontrados! Atualizando feed...", { id: "keyword-search" })
-                setSearchQuery("") // Optional: clear search after success
                 await loadReels() // Refresh data
             } else {
                 toast.error("Erro ao realizar pesquisa", { id: "keyword-search" })
@@ -187,6 +193,31 @@ export default function DiscoveryPage() {
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault()
+            const value = searchQuery.trim()
+            if (value) {
+                setKeywords([...keywords, value])
+                setSearchQuery("")
+            } else if (e.key === 'Enter') {
+                // If empty and Enter, trigger search
+                handleSearch()
+            }
+        } else if (e.key === ' ' && searchQuery.trim()) {
+            e.preventDefault()
+            setKeywords([...keywords, searchQuery.trim()])
+            setSearchQuery("")
+        } else if (e.key === 'Backspace' && !searchQuery && keywords.length > 0) {
+            // Remove last tag if input is empty
+            setKeywords(keywords.slice(0, -1))
+        }
+    }
+
+    const removeKeyword = (indexToRemove: number) => {
+        setKeywords(keywords.filter((_, index) => index !== indexToRemove))
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -197,26 +228,40 @@ export default function DiscoveryPage() {
 
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-2 w-full">
                     <Label>Buscar por palavras-chave...</Label>
                     <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Palavras-chave (ex: marketing, viral)"
-                                className="pl-9"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleSearch()
-                                    }
-                                }}
-                            />
+                        <div className="relative flex-1 group">
+                            <div className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground z-10 pointer-events-none">
+                                <Search className="h-4 w-4" />
+                            </div>
+
+                            {/* Tagged Input Container */}
+                            <div className="flex flex-wrap gap-1.5 min-h-[40px] w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                                {keywords.map((keyword, index) => (
+                                    <Badge key={index} variant="secondary" className="gap-1 pr-1 h-7">
+                                        {keyword}
+                                        <button
+                                            onClick={() => removeKeyword(index)}
+                                            className="ml-0.5 hover:bg-muted rounded-full p-0.5"
+                                        >
+                                            <X className="h-3 w-3" />
+                                            <span className="sr-only">Remover</span>
+                                        </button>
+                                    </Badge>
+                                ))}
+                                <input
+                                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px]"
+                                    placeholder={keywords.length === 0 ? "Palavras-chave (ex: marketing, viral)" : ""}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
+                            </div>
                         </div>
                         <Button
                             onClick={handleSearch}
-                            disabled={isSearching || !searchQuery.trim()}
+                            disabled={isSearching || (keywords.length === 0 && !searchQuery.trim())}
                         >
                             {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pesquisar"}
                         </Button>
