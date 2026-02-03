@@ -133,11 +133,6 @@ export default function DiscoveryPage() {
 
         if (currentInput) {
             activeKeywords.push(currentInput)
-            // Optional: clear input and add to tags visually? 
-            // For now let's just use it for search but keeping it in input might be confusing if not cleared.
-            // Let's clear it and add to state to be consistent
-            setKeywords(activeKeywords)
-            setSearchQuery("")
         }
 
         if (activeKeywords.length === 0) return
@@ -150,13 +145,18 @@ export default function DiscoveryPage() {
                 return
             }
 
-            toast.loading("Buscando novos vídeos no TikTok...", { id: "keyword-search" })
+            // Remove toast loading
+            // toast.loading("Buscando novos vídeos no TikTok...", { id: "keyword-search" })
 
             const result = await triggerKeywordSearchWebhook(activeKeywords, activeClient.id)
 
             if (result.success) {
                 toast.success("Novos vídeos encontrados! Atualizando feed...", { id: "keyword-search" })
                 await loadReels() // Refresh data
+
+                // UX Improvement: Clear keywords and search input only on success
+                setKeywords([])
+                setSearchQuery("")
             } else {
                 toast.error("Erro ao realizar pesquisa", { id: "keyword-search" })
             }
@@ -452,6 +452,26 @@ export default function DiscoveryPage() {
                     }
                 }}
             />
+
+            {/* Search Loading Overlay */}
+            {isSearching && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center gap-4 p-6 bg-card rounded-lg shadow-lg border animate-in fade-in zoom-in duration-300">
+                        <div className="relative">
+                            <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
+                            <div className="bg-primary/10 p-4 rounded-full">
+                                <Search className="h-8 w-8 text-primary animate-pulse" />
+                            </div>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-semibold">Buscando conteúdo viral</h3>
+                            <p className="text-sm text-muted-foreground max-w-[250px]">
+                                Analisando tendências e encontrando os melhores vídeos para você...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
