@@ -14,6 +14,38 @@ export type Database = {
     }
     public: {
         Tables: {
+            api_tokens: {
+                Row: {
+                    client_id: string
+                    created_at: string
+                    id: number
+                    name: string
+                    token: string
+                }
+                Insert: {
+                    client_id: string
+                    created_at?: string
+                    id?: number
+                    name: string
+                    token: string
+                }
+                Update: {
+                    client_id?: string
+                    created_at?: string
+                    id?: number
+                    name?: string
+                    token?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "api_tokens_client_id_fkey"
+                        columns: ["client_id"]
+                        isOneToOne: false
+                        referencedRelation: "clients"
+                        referencedColumns: ["id"]
+                    },
+                ]
+            }
             calendar_events: {
                 Row: {
                     client_id: string
@@ -78,33 +110,66 @@ export type Database = {
             clients: {
                 Row: {
                     brief: string | null
+                    category: string | null
+                    content_strategy: string[] | null
                     created_at: string
+                    followers_count: number | null
                     id: string
                     instagram_username: string | null
+                    key_competitors: string[] | null
+                    location: string | null
                     logo_url: string | null
-                    name: string
+                    name: string | null
+                    niche_description: string | null
+                    posts_count: number | null
                     primary_color: string | null
-                    user_id: string
+                    sub_category: string | null
+                    target_audience: string | null
+                    tone_of_voice: string | null
+                    user_id: string | null
+                    views_count: number | null
                 }
                 Insert: {
                     brief?: string | null
+                    category?: string | null
+                    content_strategy?: string[] | null
                     created_at?: string
+                    followers_count?: number | null
                     id?: string
                     instagram_username?: string | null
+                    key_competitors?: string[] | null
+                    location?: string | null
                     logo_url?: string | null
-                    name: string
+                    name?: string | null
+                    niche_description?: string | null
+                    posts_count?: number | null
                     primary_color?: string | null
-                    user_id?: string
+                    sub_category?: string | null
+                    target_audience?: string | null
+                    tone_of_voice?: string | null
+                    user_id?: string | null
+                    views_count?: number | null
                 }
                 Update: {
                     brief?: string | null
+                    category?: string | null
+                    content_strategy?: string[] | null
                     created_at?: string
+                    followers_count?: number | null
                     id?: string
                     instagram_username?: string | null
+                    key_competitors?: string[] | null
+                    location?: string | null
                     logo_url?: string | null
-                    name: string
+                    name?: string | null
+                    niche_description?: string | null
+                    posts_count?: number | null
                     primary_color?: string | null
-                    user_id?: string
+                    sub_category?: string | null
+                    target_audience?: string | null
+                    tone_of_voice?: string | null
+                    user_id?: string | null
+                    views_count?: number | null
                 }
                 Relationships: []
             }
@@ -112,11 +177,14 @@ export type Database = {
                 Row: {
                     client_id: string
                     created_at: string
+                    generated_content: Json | null
                     id: string
                     is_saved: boolean | null
                     likes: number | null
+                    original_post_url: string | null
                     platform: string
                     published_at: string | null
+                    status: string
                     thumbnail_url: string | null
                     title: string
                     url: string | null
@@ -125,11 +193,14 @@ export type Database = {
                 Insert: {
                     client_id: string
                     created_at?: string
+                    generated_content?: Json | null
                     id?: string
                     is_saved?: boolean | null
                     likes?: number | null
+                    original_post_url?: string | null
                     platform: string
                     published_at?: string | null
+                    status?: string
                     thumbnail_url?: string | null
                     title: string
                     url?: string | null
@@ -138,11 +209,14 @@ export type Database = {
                 Update: {
                     client_id?: string
                     created_at?: string
+                    generated_content?: Json | null
                     id?: string
                     is_saved?: boolean | null
                     likes?: number | null
+                    original_post_url?: string | null
                     platform?: string
                     published_at?: string | null
+                    status?: string
                     thumbnail_url?: string | null
                     title?: string
                     url?: string | null
@@ -169,7 +243,7 @@ export type Database = {
                 }
                 Insert: {
                     client_id: string
-                    color: string
+                    color?: string
                     created_at?: string
                     description?: string | null
                     id?: number
@@ -281,10 +355,10 @@ export type Database = {
                     displayUrl: string | null
                     id: number
                     likesCount: number | null
+                    plataform: string | null
                     postCaption: string | null
                     postId: string | null
                     postUrl: string | null
-                    timestamp: string | null
                     videoCount: number | null
                     videoPlayCount: number | null
                 }
@@ -295,10 +369,10 @@ export type Database = {
                     displayUrl?: string | null
                     id?: number
                     likesCount?: number | null
+                    plataform?: string | null
                     postCaption?: string | null
                     postId?: string | null
                     postUrl?: string | null
-                    timestamp?: string | null
                     videoCount?: number | null
                     videoPlayCount?: number | null
                 }
@@ -309,10 +383,10 @@ export type Database = {
                     displayUrl?: string | null
                     id?: number
                     likesCount?: number | null
+                    plataform?: string | null
                     postCaption?: string | null
                     postId?: string | null
                     postUrl?: string | null
-                    timestamp?: string | null
                     videoCount?: number | null
                     videoPlayCount?: number | null
                 }
@@ -331,31 +405,25 @@ export type Database = {
                     avatar_url: string | null
                     client_id: string
                     created_at: string
-                    handle: string
                     id: string
-                    name: string | null
                     platform: string
-                    tags: string[] | null
+                    username: string
                 }
                 Insert: {
                     avatar_url?: string | null
                     client_id: string
                     created_at?: string
-                    handle: string
                     id?: string
-                    name?: string | null
                     platform: string
-                    tags?: string[] | null
+                    username: string
                 }
                 Update: {
                     avatar_url?: string | null
                     client_id?: string
                     created_at?: string
-                    handle?: string
                     id?: string
-                    name?: string | null
                     platform?: string
-                    tags?: string[] | null
+                    username?: string
                 }
                 Relationships: [
                     {
@@ -390,42 +458,15 @@ export type Tables<
     | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
     TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {}) &
-    (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Views"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Views"]
-        : {}
-        : {})
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-    ? (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {}) &
-    (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Views"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Views"]
-        : {}
-        : {}) extends Record<string, any>
-    ? ((Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {}) &
-        (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-            ? Database[PublicTableNameOrOptions["schema"]]["Views"] extends Record<string, any>
-            ? Database[PublicTableNameOrOptions["schema"]]["Views"]
-            : {}
-            : {}))[TableName] extends {
-                Row: infer R
-            }
+    ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+            Row: infer R
+        }
     ? R
-    : never
     : never
     : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
         PublicSchema["Views"])
@@ -442,20 +483,12 @@ export type TablesInsert<
     | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
     TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {})
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-    ? (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {})[TableName] extends {
-            Insert: infer I
-        }
+    ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+        Insert: infer I
+    }
     ? I
     : never
     : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
@@ -471,20 +504,12 @@ export type TablesUpdate<
     | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
     TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {})
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-    ? (Database[PublicTableNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"] extends Record<string, any>
-        ? Database[PublicTableNameOrOptions["schema"]]["Tables"]
-        : {}
-        : {})[TableName] extends {
-            Update: infer U
-        }
+    ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+        Update: infer U
+    }
     ? U
     : never
     : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
@@ -500,16 +525,10 @@ export type Enums<
     | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
     EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicEnumNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicEnumNameOrOptions["schema"]]["Enums"] extends Record<string, any>
-        ? Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-        : {}
-        : {})
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? (Database[PublicEnumNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-        : never)
+    ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
     : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
@@ -521,22 +540,10 @@ export type CompositeTypes<
     CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
         schema: keyof Database
     }
-    ? keyof (Database[PublicCompositeTypeNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] extends Record<string, any>
-        ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-        : {}
-        : {})
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-    ? (Database[PublicCompositeTypeNameOrOptions["schema"]] extends Record<string, any>
-        ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-        : never)
+    ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
     : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-    public: {
-        Enums: {},
-    },
-} as const

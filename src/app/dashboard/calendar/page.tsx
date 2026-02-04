@@ -635,7 +635,7 @@ export default function CalendarPage() {
 
                     {/* Sidebar draggable items */}
                     <div className="w-96 flex flex-col gap-4 h-full min-h-0">
-                        <Card className="flex-1 flex flex-col shadow-sm border-dashed">
+                        <Card className="flex-1 flex flex-col shadow-sm border-dashed min-h-0">
                             <CardHeader className="py-2 px-4 border-b bg-muted/10">
                                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                                     Conteúdo agendado
@@ -673,64 +673,66 @@ export default function CalendarPage() {
                                         )}
                                     </TabsContent>
 
-                                    <TabsContent value="marcadores" className="flex-1 mt-0 overflow-y-auto min-h-0">
-                                        <div className="grid grid-cols-3 gap-3 align-start content-start">
-                                            <Dialog open={isCreateMarkerOpen} onOpenChange={setIsCreateMarkerOpen}>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="outline" className="aspect-square w-full h-auto flex flex-col items-center justify-center gap-1 border-dashed hover:border-solid bg-transparent">
-                                                        <Plus className="h-5 w-5" />
-                                                        <span className="text-xs">Novo</span>
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Criar novo marcador</DialogTitle>
-                                                    </DialogHeader>
-                                                    <div className="grid gap-4 py-4">
-                                                        <div className="grid gap-2">
-                                                            <Label htmlFor="name">Nome</Label>
-                                                            <Input id="name" value={newMarkerName} onChange={(e) => setNewMarkerName(e.target.value)} placeholder="Ex: Urgente, Promoção..." />
+                                    <TabsContent value="marcadores" className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden data-[state=inactive]:hidden">
+                                        <div className="h-full max-h-full overflow-y-auto min-h-0 px-1 pb-2">
+                                            <div className="grid grid-cols-3 gap-3 align-start content-start">
+                                                <Dialog open={isCreateMarkerOpen} onOpenChange={setIsCreateMarkerOpen}>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="outline" className="aspect-square w-full h-auto flex flex-col items-center justify-center gap-1 border-dashed hover:border-solid bg-transparent">
+                                                            <Plus className="h-5 w-5" />
+                                                            <span className="text-xs">Novo</span>
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>Criar novo marcador</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="grid gap-4 py-4">
+                                                            <div className="grid gap-2">
+                                                                <Label htmlFor="name">Nome</Label>
+                                                                <Input id="name" value={newMarkerName} onChange={(e) => setNewMarkerName(e.target.value)} placeholder="Ex: Urgente, Promoção..." />
+                                                            </div>
+                                                            <div className="grid gap-2">
+                                                                <Label htmlFor="description">Descrição</Label>
+                                                                <Textarea id="description" value={newMarkerDesc} onChange={(e) => setNewMarkerDesc(e.target.value)} placeholder="Opcional" />
+                                                            </div>
                                                         </div>
-                                                        <div className="grid gap-2">
-                                                            <Label htmlFor="description">Descrição</Label>
-                                                            <Textarea id="description" value={newMarkerDesc} onChange={(e) => setNewMarkerDesc(e.target.value)} placeholder="Opcional" />
-                                                        </div>
-                                                    </div>
-                                                    <DialogFooter>
-                                                        <Button onClick={handleCreateMarker}>Criar</Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
+                                                        <DialogFooter>
+                                                            <Button onClick={handleCreateMarker}>Criar</Button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
 
-                                            {markers.map(marker => (
-                                                <DraggableMarker
-                                                    key={marker.id}
-                                                    marker={marker}
-                                                    onEdit={startEditMarker}
-                                                    onDelete={handleDeleteMarker}
-                                                />
-                                            ))}
+                                                {markers.map(marker => (
+                                                    <DraggableMarker
+                                                        key={marker.id}
+                                                        marker={marker}
+                                                        onEdit={startEditMarker}
+                                                        onDelete={handleDeleteMarker}
+                                                    />
+                                                ))}
 
-                                            <Dialog open={isEditMarkerOpen} onOpenChange={setIsEditMarkerOpen}>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Editar Marcador</DialogTitle>
-                                                    </DialogHeader>
-                                                    <div className="grid gap-4 py-4">
-                                                        <div className="grid gap-2">
-                                                            <Label htmlFor="edit-name">Nome</Label>
-                                                            <Input id="edit-name" value={editMarkerName} onChange={(e) => setEditMarkerName(e.target.value)} />
+                                                <Dialog open={isEditMarkerOpen} onOpenChange={setIsEditMarkerOpen}>
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>Editar Marcador</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="grid gap-4 py-4">
+                                                            <div className="grid gap-2">
+                                                                <Label htmlFor="edit-name">Nome</Label>
+                                                                <Input id="edit-name" value={editMarkerName} onChange={(e) => setEditMarkerName(e.target.value)} />
+                                                            </div>
+                                                            <div className="grid gap-2">
+                                                                <Label htmlFor="edit-description">Descrição</Label>
+                                                                <Textarea id="edit-description" value={editMarkerDesc} onChange={(e) => setEditMarkerDesc(e.target.value)} />
+                                                            </div>
                                                         </div>
-                                                        <div className="grid gap-2">
-                                                            <Label htmlFor="edit-description">Descrição</Label>
-                                                            <Textarea id="edit-description" value={editMarkerDesc} onChange={(e) => setEditMarkerDesc(e.target.value)} />
-                                                        </div>
-                                                    </div>
-                                                    <DialogFooter>
-                                                        <Button onClick={handleUpdateMarker}>Salvar</Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
+                                                        <DialogFooter>
+                                                            <Button onClick={handleUpdateMarker}>Salvar</Button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </div>
                                         </div>
                                     </TabsContent>
                                 </Tabs>

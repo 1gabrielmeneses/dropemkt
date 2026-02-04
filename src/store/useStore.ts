@@ -5,12 +5,15 @@ import { Database } from '@/lib/supabase/types'
 type ClientRow = Database['public']['Tables']['clients']['Row']
 type ProfileRow = Database['public']['Tables']['tracked_profiles']['Row']
 type ContentItemRow = Database['public']['Tables']['content_items']['Row']
+
 type CalendarEventRow = Database['public']['Tables']['calendar_events']['Row']
+type ApiTokenRow = Database['public']['Tables']['api_tokens']['Row']
 
 export interface Client extends ClientRow {
     profiles: ProfileRow[]
     savedContent: ContentItemRow[]
     calendarEvents: CalendarEventRow[]
+    apiTokens: ApiTokenRow[]
 }
 
 interface AppState {
@@ -29,6 +32,9 @@ interface AppState {
     addToCalendar: (event: Omit<CalendarEventRow, 'id' | 'created_at' | 'client_id'>) => Promise<void>
     enrichClient: (clientId: string, instagramUsername: string, clientName: string) => Promise<void>
     removeProfile: (profileId: string) => Promise<void>
+
+    addApiToken: (name: string, token: string) => Promise<void>
+    deleteApiToken: (id: number) => Promise<void>
 
     updateClient: (id: string, updates: Partial<ClientRow>) => Promise<void>
     deleteClient: (id: string) => Promise<void>
@@ -63,6 +69,7 @@ export const useStore = create<AppState>((set, get) => ({
         const { data: content } = await supabase.from('content_items').select('*')
         const { data: legacyContent } = await supabase.from('posts_salvos').select('*')
         const { data: events } = await supabase.from('calendar_events').select('*')
+        const { data: apiTokens } = await supabase.from('api_tokens').select('*')
 
         const clientsWithData = clients.map(client => {
             const clientContent = content?.filter(c => c.client_id === client.id) || []
@@ -80,14 +87,18 @@ export const useStore = create<AppState>((set, get) => ({
                 views: item.viewCount ? parseInt(item.viewCount.replace(/[^0-9]/g, '')) : 0,
                 likes: item.likesCount || 0,
                 is_saved: true,
-                published_at: null
+                published_at: null,
+                generated_content: null,
+                original_post_url: item.urlPost,
+                status: 'saved'
             }))
 
             return {
                 ...client,
                 profiles: profiles?.filter(p => p.client_id === client.id) || [],
                 savedContent: [...clientContent, ...mappedLegacyContent],
-                calendarEvents: events?.filter(e => e.client_id === client.id) || []
+                calendarEvents: events?.filter(e => e.client_id === client.id) || [],
+                apiTokens: apiTokens?.filter(t => t.client_id === client.id) || []
             }
         })
 
@@ -120,7 +131,8 @@ export const useStore = create<AppState>((set, get) => ({
             ...data,
             profiles: [],
             savedContent: [],
-            calendarEvents: []
+            calendarEvents: [],
+            apiTokens: []
         }
 
         set((state) => ({
@@ -172,6 +184,55 @@ export const useStore = create<AppState>((set, get) => ({
             clients: state.clients.map(c =>
                 c.id === activeClientId
                     ? { ...c, profiles: c.profiles.filter(p => p.id !== profileId) }
+                    : c
+            )
+        }))
+    },
+
+    addApiToken: async (name, token) => {
+        const state = get()
+        const activeClientId = state.activeClientId
+        if (!activeClientId) return
+
+        const { data, error } = await supabase
+            .from('api_tokens')
+            .insert({ name, token, client_id: activeClientId })
+            .select()
+            .single()
+
+        if (error || !data) {
+            console.error("Error creating api token", error)
+            return
+        }
+
+        set((state) => ({
+            clients: state.clients.map(c =>
+                c.id === activeClientId
+                    ? { ...c, apiTokens: [...c.apiTokens, data] }
+                    : c
+            )
+        }))
+    },
+
+    deleteApiToken: async (id) => {
+        const state = get()
+        const activeClientId = state.activeClientId
+        if (!activeClientId) return
+
+        const { error } = await supabase
+            .from('api_tokens')
+            .delete()
+            .eq('id', id)
+
+        if (error) {
+            console.error("Error deleting api token", error)
+            return
+        }
+
+        set((state) => ({
+            clients: state.clients.map(c =>
+                c.id === activeClientId
+                    ? { ...c, apiTokens: c.apiTokens.filter(t => t.id !== id) }
                     : c
             )
         }))
