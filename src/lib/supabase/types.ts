@@ -20,6 +20,7 @@ export type Database = {
                     content_item_id: string | null
                     created_at: string
                     id: string
+                    links: Json | null
                     marker_id: number | null
                     notes: string | null
                     recurrence_group_id: string | null
@@ -31,6 +32,7 @@ export type Database = {
                     content_item_id?: string | null
                     created_at?: string
                     id?: string
+                    links?: Json | null
                     marker_id?: number | null
                     notes?: string | null
                     recurrence_group_id?: string | null
@@ -42,6 +44,7 @@ export type Database = {
                     content_item_id?: string | null
                     created_at?: string
                     id?: string
+                    links?: Json | null
                     marker_id?: number | null
                     notes?: string | null
                     recurrence_group_id?: string | null
@@ -99,7 +102,7 @@ export type Database = {
                     id?: string
                     instagram_username?: string | null
                     logo_url?: string | null
-                    name?: string
+                    name: string
                     primary_color?: string | null
                     user_id?: string
                 }
@@ -381,7 +384,6 @@ export type Database = {
 }
 
 type PublicSchema = Database[Extract<keyof Database, "public">]
-type DefaultSchema = PublicSchema
 
 export type Tables<
     PublicTableNameOrOptions extends
@@ -529,8 +531,8 @@ export type CompositeTypes<
     ? (Database[PublicCompositeTypeNameOrOptions["schema"]] extends Record<string, any>
         ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
         : never)
-    : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {

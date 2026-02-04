@@ -197,17 +197,17 @@ export default function DiscoveryPage() {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault()
             const value = searchQuery.trim()
+
             if (value) {
+                if (keywords.length >= 3) {
+                    return
+                }
                 setKeywords([...keywords, value])
                 setSearchQuery("")
             } else if (e.key === 'Enter') {
                 // If empty and Enter, trigger search
                 handleSearch()
             }
-        } else if (e.key === ' ' && searchQuery.trim()) {
-            e.preventDefault()
-            setKeywords([...keywords, searchQuery.trim()])
-            setSearchQuery("")
         } else if (e.key === 'Backspace' && !searchQuery && keywords.length > 0) {
             // Remove last tag if input is empty
             setKeywords(keywords.slice(0, -1))
@@ -256,6 +256,7 @@ export default function DiscoveryPage() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={handleKeyDown}
+                                    disabled={keywords.length >= 3}
                                 />
                             </div>
                         </div>
@@ -266,7 +267,11 @@ export default function DiscoveryPage() {
                             {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pesquisar"}
                         </Button>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                        Digite e pressione <strong>Enter</strong> para criar uma palavra-chave. Recomendamos usar no máximo <strong>3 palavras-chave</strong>.
+                    </p>
                 </div>
+
                 <div className="w-full md:w-[200px] space-y-2">
                     <Label>Plataforma</Label>
                     <Select value={platform} onValueChange={setPlatform}>
@@ -283,146 +288,156 @@ export default function DiscoveryPage() {
             </div>
 
             {/* Match Context Toggle */}
-            {activeClient && (
-                <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg border">
-                    <Checkbox
-                        id="match-context"
-                        checked={matchContext}
-                        onCheckedChange={(checked) => setMatchContext(checked as boolean)}
-                    />
-                    <Label htmlFor="match-context" className="cursor-pointer">
-                        Contexto do cliente: <span className="text-primary font-medium">{activeClient.name}</span>
-                    </Label>
-                </div>
-            )}
+            {
+                activeClient && (
+                    <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg border">
+                        <Checkbox
+                            id="match-context"
+                            checked={matchContext}
+                            onCheckedChange={(checked) => setMatchContext(checked as boolean)}
+                        />
+                        <Label htmlFor="match-context" className="cursor-pointer">
+                            Contexto do cliente: <span className="text-primary font-medium">{activeClient.name}</span>
+                        </Label>
+                    </div>
+                )
+            }
 
             {/* Loading State */}
-            {loading && (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <div className="text-center">
-                        <p className="font-medium">Buscando conteúdo viral...</p>
-                        <p className="text-sm text-muted-foreground">Analisando perfis dos concorrentes</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Search Loading State */}
-            {isSearching && (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-in fade-in duration-300">
-                    <div className="relative">
-                        <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
-                        <div className="bg-primary/10 p-4 rounded-full">
-                            <Search className="h-8 w-8 text-primary animate-pulse" />
+            {
+                loading && (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <div className="text-center">
+                            <p className="font-medium">Buscando conteúdo viral...</p>
+                            <p className="text-sm text-muted-foreground">Analisando perfis dos concorrentes</p>
                         </div>
                     </div>
-                    <div className="text-center space-y-2">
-                        <h3 className="text-lg font-semibold">Buscando novos vídeos...</h3>
-                        <p className="text-sm text-muted-foreground">
-                            Isto pode levar alguns segundos.
-                        </p>
+                )
+            }
+
+            {/* Search Loading State */}
+            {
+                isSearching && (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-in fade-in duration-300">
+                        <div className="relative">
+                            <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
+                            <div className="bg-primary/10 p-4 rounded-full">
+                                <Search className="h-8 w-8 text-primary animate-pulse" />
+                            </div>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-semibold">Buscando novos vídeos...</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Isto pode levar alguns segundos.
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Empty State */}
-            {!loading && !isSearching && filteredReels.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <div className="text-6xl">🔍</div>
-                    <div>
-                        <p className="font-medium text-lg">Nenhum conteúdo encontrado</p>
-                        <p className="text-sm text-muted-foreground">
-                            {reels.length === 0
-                                ? "Adicione concorrentes para começar a descobrir conteúdo viral"
-                                : "Tente ajustar os filtros de busca"}
-                        </p>
+            {
+                !loading && !isSearching && filteredReels.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                        <div className="text-6xl">🔍</div>
+                        <div>
+                            <p className="font-medium text-lg">Nenhum conteúdo encontrado</p>
+                            <p className="text-sm text-muted-foreground">
+                                {reels.length === 0
+                                    ? "Adicione concorrentes para começar a descobrir conteúdo viral"
+                                    : "Tente ajustar os filtros de busca"}
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Reels Grid */}
-            {!loading && !isSearching && filteredReels.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                    {filteredReels.map((reel) => (
-                        <ReelCard
-                            key={reel.id}
-                            reel={reel}
-                            onPlay={(url) => {
-                                setSelectedVideoUrl(url)
-                                setModalOpen(true)
-                            }}
-                            onSave={handleSave}
-                            onRemove={handleRemove}
-                            isSaved={savedPostIds.has(reel.id)}
-                            onOpenScript={async (reel) => {
-                                setSelectedScriptVideoUrl(reel.videoUrl)
-                                setSelectedScriptReel(reel)
-                                setScriptContent("") // Reset previous content
-                                setScriptModalOpen(true)
+            {
+                !loading && !isSearching && filteredReels.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                        {filteredReels.map((reel) => (
+                            <ReelCard
+                                key={reel.id}
+                                reel={reel}
+                                onPlay={(url) => {
+                                    setSelectedVideoUrl(url)
+                                    setModalOpen(true)
+                                }}
+                                onSave={handleSave}
+                                onRemove={handleRemove}
+                                isSaved={savedPostIds.has(reel.id)}
+                                onOpenScript={async (reel) => {
+                                    setSelectedScriptVideoUrl(reel.videoUrl)
+                                    setSelectedScriptReel(reel)
+                                    setScriptContent("") // Reset previous content
+                                    setScriptModalOpen(true)
 
-                                // Check if we already have a saved script
-                                if (savedScripts[reel.id]) {
-                                    console.log('[DiscoveryPage] Using saved script for:', reel.id)
-                                    setScriptContent(savedScripts[reel.id])
-                                    return
-                                }
-
-                                setScriptLoading(true)
-
-                                try {
-                                    const result = await triggerScriptWebhook(reel.id)
-
-                                    if (result.success && result.data) {
-                                        console.log('Webhook result data:', result.data)
-                                        // Handle different possible response structures
-                                        // Handle different possible response structures
-                                        let content = ""
-                                        const data = result.data
-
-                                        // Helper to extract text from various structures
-                                        const extractText = (obj: any): string => {
-                                            if (!obj) return ""
-                                            if (typeof obj === 'string') return obj
-
-                                            // Handle array (take first item)
-                                            if (Array.isArray(obj)) {
-                                                return obj.length > 0 ? extractText(obj[0]) : ""
-                                            }
-
-                                            // Handle specific nested structures (e.g. Gemini)
-                                            if (obj.content?.parts?.[0]?.text) {
-                                                return obj.content.parts[0].text
-                                            }
-
-                                            // Handle common keys
-                                            if (obj.output) return extractText(obj.output)
-                                            if (obj.script) return extractText(obj.script)
-                                            if (obj.text) return extractText(obj.text)
-                                            if (obj.content && typeof obj.content === 'string') return obj.content
-
-                                            // Fallback to JSON string
-                                            return JSON.stringify(obj, null, 2)
-                                        }
-
-                                        content = extractText(data)
-
-                                        setScriptContent(content)
-                                        toast.success('Roteiro gerado com sucesso!')
-                                    } else {
-                                        toast.error('Erro ao gerar roteiro')
-                                        setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
+                                    // Check if we already have a saved script
+                                    if (savedScripts[reel.id]) {
+                                        console.log('[DiscoveryPage] Using saved script for:', reel.id)
+                                        setScriptContent(savedScripts[reel.id])
+                                        return
                                     }
-                                } catch (error) {
-                                    console.error("Error generating script:", error)
-                                    toast.error('Erro ao conectar com o serviço de IA')
-                                } finally {
-                                    setScriptLoading(false)
-                                }
-                            }}
-                        />
-                    ))}
-                </div>
-            )}
+
+                                    setScriptLoading(true)
+
+                                    try {
+                                        const result = await triggerScriptWebhook(reel.id)
+
+                                        if (result.success && result.data) {
+                                            console.log('Webhook result data:', result.data)
+                                            // Handle different possible response structures
+                                            // Handle different possible response structures
+                                            let content = ""
+                                            const data = result.data
+
+                                            // Helper to extract text from various structures
+                                            const extractText = (obj: any): string => {
+                                                if (!obj) return ""
+                                                if (typeof obj === 'string') return obj
+
+                                                // Handle array (take first item)
+                                                if (Array.isArray(obj)) {
+                                                    return obj.length > 0 ? extractText(obj[0]) : ""
+                                                }
+
+                                                // Handle specific nested structures (e.g. Gemini)
+                                                if (obj.content?.parts?.[0]?.text) {
+                                                    return obj.content.parts[0].text
+                                                }
+
+                                                // Handle common keys
+                                                if (obj.output) return extractText(obj.output)
+                                                if (obj.script) return extractText(obj.script)
+                                                if (obj.text) return extractText(obj.text)
+                                                if (obj.content && typeof obj.content === 'string') return obj.content
+
+                                                // Fallback to JSON string
+                                                return JSON.stringify(obj, null, 2)
+                                            }
+
+                                            content = extractText(data)
+
+                                            setScriptContent(content)
+                                            toast.success('Roteiro gerado com sucesso!')
+                                        } else {
+                                            toast.error('Erro ao gerar roteiro')
+                                            setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
+                                        }
+                                    } catch (error) {
+                                        console.error("Error generating script:", error)
+                                        toast.error('Erro ao conectar com o serviço de IA')
+                                    } finally {
+                                        setScriptLoading(false)
+                                    }
+                                }}
+                            />
+                        ))}
+                    </div>
+                )
+            }
 
             <VideoModal
                 isOpen={modalOpen}
@@ -473,6 +488,6 @@ export default function DiscoveryPage() {
 
             {/* Search Loading Overlay Removed */}
 
-        </div>
+        </div >
     )
 }

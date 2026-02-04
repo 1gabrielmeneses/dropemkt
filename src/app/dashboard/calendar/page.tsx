@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { createMarker, getMarkers, updateMarker, deleteMarker, Marker, createCalendarEvent, getCalendarEvents, deleteCalendarEvent, updateEventRecurrence, ensureContentItem } from "@/app/actions/calendar"
+import { createMarker, getMarkers, updateMarker, deleteMarker, Marker, createCalendarEvent, getCalendarEvents, deleteCalendarEvent, updateEventRecurrence, ensureContentItem, updateCalendarEvent } from "@/app/actions/calendar"
 import { toast } from "sonner"
 import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { Database } from "@/lib/supabase/types"
@@ -32,7 +32,7 @@ const MARKER_COLORS = [
 type CalendarEvent = Awaited<ReturnType<typeof getCalendarEvents>>[number]
 type ContentItem = Database['public']['Tables']['content_items']['Row']
 
-function DraggablePost({ content, onPlay }: { content: ContentItem, onPlay: (url: string) => void }) {
+function DraggablePost({ content, onPlay, className }: { content: ContentItem, onPlay: (url: string) => void, className?: string }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `post-source-${content.id}`,
         data: { content, type: 'post-source' }
@@ -45,7 +45,8 @@ function DraggablePost({ content, onPlay }: { content: ContentItem, onPlay: (url
             {...attributes}
             className={cn(
                 "group relative aspect-[9/16] rounded-md overflow-hidden bg-black shadow-sm ring-1 ring-border hover:ring-primary/50 transition-all cursor-grab active:cursor-grabbing select-none",
-                isDragging ? "opacity-30 start-dragging" : "opacity-100"
+                isDragging ? "opacity-30 start-dragging" : "opacity-100",
+                className
             )}
         >
             {/* Video Cover (Iframe Hack) */}
@@ -193,9 +194,15 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent, onP
                 {events.map(event => (
                     <div
                         key={event.id}
-                        className="text-[10px] p-1.5 rounded shadow-sm relative group/event transition-all hover:scale-[1.02] cursor-default flex items-center justify-between gap-1 overflow-hidden"
+                        className="text-[10px] p-1.5 rounded shadow-sm relative group/event transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-between gap-1 overflow-hidden"
                         style={{ backgroundColor: event.marker?.color || (event.content_item ? '#f1f5f9' : '#fff') }}
                         title={event.marker?.description || event.content_item?.title || ''}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (!event.content_item) {
+                                onEditEvent(event);
+                            }
+                        }}
                     >
                         <div className="flex items-center gap-1.5 min-w-0 flex-1">
                             {/* Color indicator for posts */}
@@ -232,7 +239,7 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent, onP
                                         onEditEvent(event);
                                     }}
                                     className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center shadow-sm hover:scale-110"
-                                    title="Editar recorrência"
+                                    title="Editar"
                                 >
                                     <Pencil className="h-2 w-2" />
                                 </button>
@@ -280,6 +287,8 @@ export default function CalendarPage() {
     const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false)
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
     const [editEventWeeks, setEditEventWeeks] = useState(1)
+    const [editingEventLinks, setEditingEventLinks] = useState<{ id: string, url: string }[]>([])
+    const [newLinkUrl, setNewLinkUrl] = useState("")
 
     // Delete Confirmation State
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
@@ -463,25 +472,61 @@ export default function CalendarPage() {
     const handleEditEvent = (event: CalendarEvent) => {
         setEditingEvent(event)
         setEditEventWeeks(1)
+
+        const links = (event.links as any) || []
+        if (Array.isArray(links)) {
+            setEditingEventLinks(links)
+        } else {
+            setEditingEventLinks([])
+        }
+
         setIsEditEventDialogOpen(true)
     }
 
-    const handleUpdateEventRecurrence = async () => {
+    const handleAddLink = () => {
+        if (!newLinkUrl) return
+        const id = crypto.randomUUID()
+        setEditingEventLinks([...editingEventLinks, { id, url: newLinkUrl }])
+        setNewLinkUrl("")
+    }
+
+    const handleRemoveLink = (id: string) => {
+        setEditingEventLinks(prev => prev.filter(l => l.id !== id))
+    }
+
+    const handleSaveEventDetails = async () => {
         if (!editingEvent || !activeClient) return
 
-        setIsEditEventDialogOpen(false)
+        // 1. Update Links and other details
+        const linkUpdate = await updateCalendarEvent(editingEvent.id, {
+            links: editingEventLinks
+        })
 
-        const result = await updateEventRecurrence(editingEvent.id, editEventWeeks)
-
-        if (result.success) {
-            const freshEvents = await getCalendarEvents(activeClient.id) || []
-            setCalendarEvents(freshEvents as CalendarEvent[])
-            toast.success("Recorrência configurada!")
-        } else {
-            toast.error("Erro ao configurar recorrência")
+        if (!linkUpdate.success) {
+            toast.error("Erro ao salvar links")
+            return
         }
 
-        setEditingEvent(null)
+        // 2. Update Recurrence (only if configured > 1)
+        // If it is 1, we assume the user intends to edit just this instance (or didn't change the default).
+        // This prevents accidental destruction of recurrence groups when just adding a link.
+        let recurrenceSuccess = true
+        if (editEventWeeks > 1) {
+            const recurrenceUpdate = await updateEventRecurrence(editingEvent.id, editEventWeeks)
+            recurrenceSuccess = recurrenceUpdate.success
+
+            if (!recurrenceSuccess) {
+                toast.error("Erro ao atualizar recorrência")
+            }
+        }
+
+        if (linkUpdate.success && recurrenceSuccess) {
+            const freshEvents = await getCalendarEvents(activeClient.id) || []
+            setCalendarEvents(freshEvents as CalendarEvent[])
+            toast.success("Evento atualizado!")
+            setIsEditEventDialogOpen(false)
+            setEditingEvent(null)
+        }
     }
 
     const handleDeleteEvent = async (eventId: string) => {
@@ -589,21 +634,21 @@ export default function CalendarPage() {
                     </div>
 
                     {/* Sidebar draggable items */}
-                    <div className="w-96 flex flex-col gap-4">
+                    <div className="w-96 flex flex-col gap-4 h-full min-h-0">
                         <Card className="flex-1 flex flex-col shadow-sm border-dashed">
                             <CardHeader className="py-2 px-4 border-b bg-muted/10">
                                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                                     Conteúdo agendado
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="flex-1 overflow-auto p-2 bg-muted/5">
-                                <Tabs defaultValue="marcadores" className="w-full h-full flex flex-col">
-                                    <TabsList className="w-full grid grid-cols-2 mb-2">
+                            <CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden p-2 bg-muted/5">
+                                <Tabs defaultValue="marcadores" className="w-full flex-1 flex flex-col min-h-0">
+                                    <TabsList className="w-full grid grid-cols-2 mb-2 shrink-0">
                                         <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
                                         <TabsTrigger value="marcadores">Marcadores</TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="conteudo" className="flex-1 mt-0">
+                                    <TabsContent value="conteudo" className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden">
                                         {savedContent.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center h-full text-center p-4">
                                                 <p className="text-sm text-muted-foreground">
@@ -613,15 +658,22 @@ export default function CalendarPage() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-2 gap-3">
-                                                {savedContent.map(content => (
-                                                    <DraggablePost key={content.id} content={content} onPlay={setVideoUrl} />
-                                                ))}
+                                            <div className="flex-1 overflow-y-auto min-h-0 px-1 pb-2">
+                                                <div className="grid grid-cols-2 gap-3 pb-2">
+                                                    {savedContent.map(content => (
+                                                        <DraggablePost
+                                                            key={content.id}
+                                                            content={content}
+                                                            onPlay={setVideoUrl}
+                                                            className="w-full"
+                                                        />
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </TabsContent>
 
-                                    <TabsContent value="marcadores" className="flex-1 mt-0">
+                                    <TabsContent value="marcadores" className="flex-1 mt-0 overflow-y-auto min-h-0">
                                         <div className="grid grid-cols-3 gap-3 align-start content-start">
                                             <Dialog open={isCreateMarkerOpen} onOpenChange={setIsCreateMarkerOpen}>
                                                 <DialogTrigger asChild>
@@ -710,34 +762,80 @@ export default function CalendarPage() {
                     <DialogHeader>
                         <DialogTitle>Configurar Recorrência</DialogTitle>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground">
-                                Defina por quantas semanas este marcador deve se repetir.
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <Label className="min-w-24">Semanas:</Label>
+                    <div className="grid gap-6 py-4">
+                        {/* Links Section */}
+                        <div className="space-y-3">
+                            <h4 className="font-medium text-sm">Links de Referência</h4>
+                            <div className="flex gap-2">
                                 <Input
-                                    type="number"
-                                    min={1}
-                                    max={10}
-                                    value={editEventWeeks}
-                                    onChange={(e) => {
-                                        const val = Number(e.target.value)
-                                        if (val <= 10 && val >= 1) setEditEventWeeks(val)
+                                    value={newLinkUrl}
+                                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                                    placeholder="Cole um link aqui..."
+                                    className="h-8 text-sm"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            handleAddLink()
+                                        }
                                     }}
-                                    className="w-24"
                                 />
-                                <span className="text-xs text-muted-foreground">(Máx. 10)</span>
+                                <Button onClick={handleAddLink} size="sm" variant="secondary" className="h-8">Adicionar</Button>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                {`Repetir por ${editEventWeeks} semanas neste dia da semana.`}
-                            </p>
+
+                            {editingEventLinks.length > 0 && (
+                                <div className="space-y-2 mt-2 max-h-[150px] overflow-y-auto pr-1">
+                                    {editingEventLinks.map(link => (
+                                        <div key={link.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded border group">
+                                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[280px] block">
+                                                {link.url}
+                                            </a>
+                                            <Button
+                                                onClick={() => handleRemoveLink(link.id)}
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
+
+                        {/* Recurrence Section - Only show if it's a marker event (no content_item) */}
+                        {!editingEvent?.content_item_id && (
+                            <div className="space-y-3 pt-4 border-t">
+                                <h4 className="font-medium text-sm">Recorrência</h4>
+                                <div className="space-y-2">
+                                    <p className="text-sm text-muted-foreground">
+                                        Defina por quantas semanas este marcador deve se repetir.
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <Label className="min-w-24">Semanas:</Label>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={10}
+                                            value={editEventWeeks}
+                                            onChange={(e) => {
+                                                const val = Number(e.target.value)
+                                                if (val <= 10 && val >= 1) setEditEventWeeks(val)
+                                            }}
+                                            className="w-24 h-8"
+                                        />
+                                        <span className="text-xs text-muted-foreground">(Máx. 10)</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {`Repetir por ${editEventWeeks} semanas neste dia da semana.`}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditEventDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleUpdateEventRecurrence}>Confirmar</Button>
+                        <Button onClick={handleSaveEventDetails}>Salvar Alterações</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

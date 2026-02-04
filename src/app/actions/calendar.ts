@@ -334,6 +334,7 @@ export async function updateEventRecurrence(
                 content_item_id: originalEvent.content_item_id,
                 status: originalEvent.status,
                 notes: originalEvent.notes,
+                links: originalEvent.links,
                 recurrence_group_id: recurrenceGroupId
             })
         }
@@ -353,4 +354,31 @@ export async function updateEventRecurrence(
         console.error("[updateEventRecurrence] Unexpected error:", error)
         return { success: false, error }
     }
+}
+
+export async function updateCalendarEvent(
+    eventId: string,
+    updates: {
+        notes?: string
+        links?: any // content is jsonb
+    }
+) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('calendar_events')
+        .update({
+            ...(updates.notes !== undefined && { notes: updates.notes }),
+            ...(updates.links !== undefined && { links: updates.links })
+        })
+        .eq('id', eventId)
+        .select()
+        .single()
+
+    if (error) {
+        console.error("Error updating calendar event:", error)
+        return { success: false, error: error.message }
+    }
+
+    return { success: true, event: data }
 }

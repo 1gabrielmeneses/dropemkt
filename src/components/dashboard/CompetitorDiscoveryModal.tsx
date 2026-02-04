@@ -232,7 +232,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                         </div>
 
                         <p className="text-[9px] text-muted-foreground mt-1">
-                            Digite e pressione <strong>Enter</strong> para criar uma tag. Recomendamos usar <strong>2 palavras-chave</strong> (máximo 3).
+                            Digite e pressione <strong>Enter</strong> para criar uma palavra-chave. Recomendamos usar <strong>2 palavras-chave</strong> (máximo 3).
                         </p>
 
                         {/* AI Suggestions Area */}
