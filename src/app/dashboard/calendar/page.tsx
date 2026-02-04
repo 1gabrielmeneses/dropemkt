@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, parseISO } from "date-fns"
 import { useStore } from "@/store/useStore"
 import { cn, getEmbedUrl } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, GripVertical, Plus, MoreHorizontal, Pencil, Trash, Eye, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight, GripVertical, Plus, MoreHorizontal, Pencil, Trash, Eye, Play, Link, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
@@ -815,15 +815,17 @@ export default function CalendarPage() {
                             {editingEventLinks.length > 0 && (
                                 <div className="space-y-2 mt-2 max-h-[150px] overflow-y-auto pr-1">
                                     {editingEventLinks.map(link => (
-                                        <div key={link.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded border group">
-                                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[280px] block">
-                                                {link.url}
+                                        <div key={link.id} className="flex items-center text-sm bg-muted/30 p-2 rounded border group gap-2">
+                                            <Link className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate flex-1 flex items-center gap-2">
+                                                <span className="truncate">{link.url}</span>
+                                                <ExternalLink className="h-3 w-3 shrink-0" />
                                             </a>
                                             <Button
                                                 onClick={() => handleRemoveLink(link.id)}
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
                                             >
                                                 <Trash className="h-3 w-3" />
                                             </Button>
