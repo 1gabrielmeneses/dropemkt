@@ -158,10 +158,10 @@ export default function DashboardPage() {
                                 <ProfileCard
                                     key={profile.id}
                                     id={profile.id}
-                                    name={profile.name || ""}
-                                    handle={profile.handle}
+                                    name={profile.username || ""}
+                                    handle={profile.username}
                                     platform={profile.platform as "instagram" | "tiktok" | "youtube"}
-                                    tags={profile.tags || []}
+                                    tags={[]}
                                     avatarUrl={profile.avatar_url || undefined}
                                     onDelete={handleDeleteProfile}
                                 />
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 <CompetitorDiscoveryModal
                     open={discoveryOpen}
                     onOpenChange={setDiscoveryOpen}
-                    defaultQuery={activeClient.brief || activeClient.name}
+                    defaultQuery={activeClient.brief || activeClient.name || undefined}
                 />
 
                 <TabsContent value="analyzed">

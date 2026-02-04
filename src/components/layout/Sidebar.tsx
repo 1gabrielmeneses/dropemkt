@@ -176,7 +176,7 @@ function ClientSwitcher() {
                     <Button variant="outline" className="w-full justify-between px-3 h-12 font-normal">
                         <div className="flex items-center gap-3 truncate">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={activeClient?.logo_url || ""} alt={activeClient?.name} />
+                                <AvatarImage src={activeClient?.logo_url || ""} alt={activeClient?.name || undefined} />
                                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                     {activeClient?.name?.[0] || "?"}
                                 </AvatarFallback>
@@ -196,7 +196,7 @@ function ClientSwitcher() {
                                 className="flex-1 cursor-pointer gap-3 min-w-0 pr-10 h-12"
                             >
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={client.logo_url || ""} alt={client.name} />
+                                    <AvatarImage src={client.logo_url || ""} alt={client.name || undefined} />
                                     <AvatarFallback className="bg-muted text-muted-foreground">
                                         {client.name?.[0]}
                                     </AvatarFallback>

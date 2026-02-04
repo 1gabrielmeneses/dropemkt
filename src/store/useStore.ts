@@ -75,23 +75,28 @@ export const useStore = create<AppState>((set, get) => ({
             const clientContent = content?.filter(c => c.client_id === client.id) || []
             const clientLegacyContent = legacyContent?.filter(c => c.client_id === client.id) || []
 
-            // Map legacy content to ContentItemRow structure
-            const mappedLegacyContent: ContentItemRow[] = clientLegacyContent.map(item => ({
-                id: item.id.toString(), // Convert number ID to string
-                client_id: item.client_id || client.id,
-                created_at: item.created_at,
-                platform: (item.tipoPost || 'instagram').toLowerCase(),
-                title: item.legendaPost || 'Sem título',
-                url: item.urlPost,
-                thumbnail_url: item.thumbnailurl,
-                views: item.viewCount ? parseInt(item.viewCount.replace(/[^0-9]/g, '')) : 0,
-                likes: item.likesCount || 0,
-                is_saved: true,
-                published_at: null,
-                generated_content: null,
-                original_post_url: item.urlPost,
-                status: 'saved'
-            }))
+            // Create set of existing URLs to prevent duplication
+            const existingUrls = new Set(clientContent.map(c => c.url).filter(Boolean))
+
+            // Map legacy content to ContentItemRow structure, filtering out duplicates
+            const mappedLegacyContent: ContentItemRow[] = clientLegacyContent
+                .filter(item => !item.urlPost || !existingUrls.has(item.urlPost))
+                .map(item => ({
+                    id: item.id.toString(), // Convert number ID to string
+                    client_id: item.client_id || client.id,
+                    created_at: item.created_at,
+                    platform: (item.tipoPost?.toLowerCase().includes('tiktok') ? 'tiktok' : 'instagram'),
+                    title: item.legendaPost || 'Sem título',
+                    url: item.urlPost,
+                    thumbnail_url: item.thumbnailurl,
+                    views: item.viewCount ? parseInt(item.viewCount.replace(/[^0-9]/g, '')) : 0,
+                    likes: item.likesCount || 0,
+                    is_saved: true,
+                    published_at: null,
+                    generated_content: null,
+                    original_post_url: item.urlPost,
+                    status: 'saved'
+                }))
 
             return {
                 ...client,

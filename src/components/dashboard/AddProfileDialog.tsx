@@ -21,10 +21,8 @@ export function AddProfileDialog({ open, onOpenChange }: AddProfileDialogProps) 
 
     const handleSubmit = async () => {
         await addProfile({
-            name: handle.replace("@", ""), // Simplification
-            handle,
+            username: handle,
             platform,
-            tags: tags.split(",").map(t => t.trim()).filter(Boolean),
             avatar_url: `https://ui-avatars.com/api/?name=${handle}&background=random`
         })
         setHandle("")

@@ -32,7 +32,7 @@ const MARKER_COLORS = [
 type CalendarEvent = Awaited<ReturnType<typeof getCalendarEvents>>[number]
 type ContentItem = Database['public']['Tables']['content_items']['Row']
 
-function DraggablePost({ content, onPlay, className }: { content: ContentItem, onPlay: (url: string) => void, className?: string }) {
+function DraggablePost({ content, onPlay, className, isHighlighted }: { content: ContentItem, onPlay: (url: string) => void, className?: string, isHighlighted?: boolean }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `post-source-${content.id}`,
         data: { content, type: 'post-source' }
@@ -43,12 +43,22 @@ function DraggablePost({ content, onPlay, className }: { content: ContentItem, o
             ref={setNodeRef}
             {...listeners}
             {...attributes}
+            id={`sidebar-item-${content.id}`}
             className={cn(
                 "group relative aspect-[9/16] rounded-md overflow-hidden bg-black shadow-sm ring-1 ring-border hover:ring-primary/50 transition-all cursor-grab active:cursor-grabbing select-none",
                 isDragging ? "opacity-30 start-dragging" : "opacity-100",
+                isHighlighted && "ring-4 ring-primary scale-105 z-10 shadow-lg",
                 className
             )}
         >
+            {/* Scroll into view effect */}
+            {isHighlighted && (
+                <span ref={(node) => {
+                    if (node) {
+                        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }} />
+            )}
             {/* Video Cover (Iframe Hack) */}
             <div className="w-full h-full pointer-events-none relative">
                 {content.url ? (
@@ -155,14 +165,25 @@ function DraggableMarker({ marker, onClick, onEdit, onDelete }: { marker: Marker
     )
 }
 
-function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent, onPlayVideo }: {
-    day: Date,
-    currentDate: Date,
-    events: CalendarEvent[],
-    onDeleteEvent: (id: string) => void,
-    onEditEvent: (event: CalendarEvent) => void,
-    onPlayVideo: (url: string) => void
-}) {
+interface CalendarDayProps {
+    day: Date;
+    currentDate: Date;
+    events: CalendarEvent[];
+    onDeleteEvent: (id: string) => void;
+    onEditEvent: (event: CalendarEvent) => void;
+    onPlayVideo: (url: string) => void;
+    onHoverEvent: (contentId: string | null) => void;
+}
+
+function CalendarDay({
+    day,
+    currentDate,
+    events,
+    onDeleteEvent,
+    onEditEvent,
+    onPlayVideo,
+    onHoverEvent
+}: CalendarDayProps) {
     const dateStr = format(day, 'yyyy-MM-dd');
     const { setNodeRef, isOver } = useDroppable({
         id: dateStr,
@@ -197,6 +218,8 @@ function CalendarDay({ day, currentDate, events, onDeleteEvent, onEditEvent, onP
                         className="text-[10px] p-1.5 rounded shadow-sm relative group/event transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-between gap-1 overflow-hidden"
                         style={{ backgroundColor: event.marker?.color || (event.content_item ? '#f1f5f9' : '#fff') }}
                         title={event.marker?.description || event.content_item?.title || ''}
+                        onMouseEnter={() => event.content_item && onHoverEvent(event.content_item.id)}
+                        onMouseLeave={() => onHoverEvent(null)}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (!event.content_item) {
@@ -296,6 +319,9 @@ export default function CalendarPage() {
 
     // Video Playback State
     const [videoUrl, setVideoUrl] = useState<string | null>(null)
+
+    // Highlight State
+    const [hoveredContentId, setHoveredContentId] = useState<string | null>(null)
 
     // Fallback if no client selected
     const savedContent = activeClient?.savedContent || []
@@ -451,7 +477,7 @@ export default function CalendarPage() {
 
             if (!ensured.success || !ensured.id) {
                 setCalendarEvents(prev => prev.filter(e => e.id !== tempId));
-                toast.error("Erro ao migrar conteúdo para agendamento");
+                toast.error(`Erro ao migrar conteúdo: ${ensured.error}`);
                 return;
             }
 
@@ -628,6 +654,7 @@ export default function CalendarPage() {
                                     onDeleteEvent={handleDeleteEvent}
                                     onEditEvent={handleEditEvent}
                                     onPlayVideo={setVideoUrl}
+                                    onHoverEvent={setHoveredContentId}
                                 />
                             ))}
                         </div>
@@ -666,6 +693,7 @@ export default function CalendarPage() {
                                                             content={content}
                                                             onPlay={setVideoUrl}
                                                             className="w-full"
+                                                            isHighlighted={hoveredContentId === content.id}
                                                         />
                                                     ))}
                                                 </div>

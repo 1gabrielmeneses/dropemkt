@@ -149,11 +149,9 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
 
     const handleAdd = async (competitor: CompetitorSearchResult) => {
         await addProfile({
-            name: competitor.fullName,
-            handle: competitor.username,
+            username: competitor.username,
             platform: competitor.platform,
             avatar_url: competitor.avatarUrl,
-            tags: ["Competitor", "AI Discovery"]
         })
         setAddedIds(prev => new Set(prev).add(competitor.id))
     }
