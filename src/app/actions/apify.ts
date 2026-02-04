@@ -13,8 +13,10 @@ export interface CompetitorSearchResult {
     fullName: string
     avatarUrl: string
     followersCount?: number
+    postsCount?: number
     platform: 'instagram' | 'tiktok'
     profileUrl: string
+    isVerified?: boolean
 }
 
 export interface InstagramProfile {
