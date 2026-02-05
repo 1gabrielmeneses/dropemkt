@@ -222,7 +222,7 @@ export default function DiscoveryPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">Motor de descoberta</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-primary">Motor de descoberta</h1>
                 <p className="text-muted-foreground">Encontre conteúdo viral no seu nicho.</p>
             </div>
 
