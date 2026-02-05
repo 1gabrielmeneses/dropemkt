@@ -23,7 +23,8 @@ export function AddProfileDialog({ open, onOpenChange }: AddProfileDialogProps) 
         await addProfile({
             username: handle,
             platform,
-            avatar_url: `https://ui-avatars.com/api/?name=${handle}&background=random`
+            avatar_url: `https://ui-avatars.com/api/?name=${handle}&background=random`,
+            last_scraped_at: null
         })
         setHandle("")
         setTags("")

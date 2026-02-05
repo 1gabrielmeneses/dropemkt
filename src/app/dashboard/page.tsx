@@ -12,6 +12,7 @@ import { GrowthChart } from "@/components/dashboard/analytics/GrowthChart"
 import { DemographicsChart } from "@/components/dashboard/analytics/DemographicsChart"
 import { ActiveHoursChart } from "@/components/dashboard/analytics/ActiveHoursChart"
 import { TopContentList } from "@/components/dashboard/analytics/TopContentList"
+import { EngagementMetrics } from "@/components/dashboard/analytics/EngagementMetrics"
 import { CompetitorDiscoveryModal } from "@/components/dashboard/CompetitorDiscoveryModal"
 import { getSavedPosts, removePost, getSavedScripts, saveScript, removeSavedScript } from "@/app/actions/discovery"
 import { WebhookReelData, triggerScriptWebhook } from "@/app/actions/webhook"
@@ -114,27 +115,94 @@ export default function DashboardPage() {
                     </TabsList>
                 </div>
 
-                <TabsContent value="overview" className="space-y-6">
-                    <StatsCards />
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[350px]">
+                <TabsContent value="overview" className="space-y-10">
+                    <div className="mb-14">
+                        <StatsCards />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[350px] mb-14">
                         <div className="lg:col-span-3 h-full">
-                            <GrowthChart />
+                            <GrowthChart clientId={activeClient?.id} />
                         </div>
                         <div className="lg:col-span-2 h-full">
-                            <ActiveHoursChart />
+                            <EngagementMetrics
+                                avgLikes={activeClient.avg_like}
+                                avgComments={activeClient.avg_comments}
+                                avgViews={activeClient.avg_views}
+                            />
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        <div className="lg:col-span-2 h-full">
-                            <DemographicsChart />
-                        </div>
-                        <div className="lg:col-span-3 h-full">
-                            <TopContentList />
-                        </div>
+                    <div className="w-full">
+                        <TopContentList
+                            onPlay={(url) => {
+                                setSelectedVideoUrl(url)
+                                setVideoModalOpen(true)
+                            }}
+                            onViewScript={async (item) => {
+                                // Adapt item to reel-like structure for the shared logic if needed, 
+                                // but simpler to just use item fields directly
+                                setSelectedScriptVideoUrl(item.url || "")
+                                // We need a 'reel' object for saving scripts potentially. 
+                                // TopContentList items might differ from 'savedPosts'. 
+                                // Construct a compatible object or fetch if needed.
+                                // For now, let's construct a minimal reel object.
+                                const reel = {
+                                    id: item.id,
+                                    videoUrl: item.url || "",
+                                    // other fields might be needed by saveScript... 
+                                    // looking at saveScript usage: saveScript(activeClient.id, selectedScriptReel, scriptContent)
+                                    // It likely needs more than just id and videoUrl. 
+                                    // However, for viewing, this is enough. 
+                                    // If 'item' is fully populated, we can pass it casted.
+                                    ...item
+                                }
+                                setSelectedScriptReel(reel)
+                                setScriptContent("")
+                                setScriptModalOpen(true)
+
+                                if (savedScripts[item.id]) {
+                                    setScriptContent(savedScripts[item.id])
+                                    return
+                                }
+
+                                setScriptLoading(true)
+
+                                try {
+                                    const result = await triggerScriptWebhook(item.id)
+
+                                    if (result.success && result.data) {
+                                        let content = ""
+                                        const data = result.data
+
+                                        const extractText = (obj: any): string => {
+                                            if (!obj) return ""
+                                            if (typeof obj === 'string') return obj
+                                            if (Array.isArray(obj)) return obj.length > 0 ? extractText(obj[0]) : ""
+                                            if (obj.content?.parts?.[0]?.text) return obj.content.parts[0].text
+                                            if (obj.output) return extractText(obj.output)
+                                            if (obj.script) return extractText(obj.script)
+                                            if (obj.text) return extractText(obj.text)
+                                            if (obj.content && typeof obj.content === 'string') return obj.content
+                                            return JSON.stringify(obj, null, 2)
+                                        }
+
+                                        content = extractText(data)
+                                        setScriptContent(content)
+                                        toast.success('Roteiro gerado com sucesso!')
+                                    } else {
+                                        toast.error('Erro ao gerar roteiro')
+                                        setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
+                                    }
+                                } catch (error) {
+                                    toast.error('Erro ao conectar com o serviço de IA')
+                                } finally {
+                                    setScriptLoading(false)
+                                }
+                            }}
+                        />
                     </div>
                 </TabsContent>
 
-                <TabsContent value="profiles" className="space-y-6">
+                <TabsContent value="profiles" className="space-y-10">
                     <div className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setAddProfileOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
@@ -159,7 +227,7 @@ export default function DashboardPage() {
                                     key={profile.id}
                                     id={profile.id}
                                     name={profile.username || ""}
-                                    handle={profile.username}
+                                    handle={profile.username || ""}
                                     platform={profile.platform as "instagram" | "tiktok" | "youtube"}
                                     tags={[]}
                                     avatarUrl={profile.avatar_url || undefined}

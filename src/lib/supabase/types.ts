@@ -109,6 +109,9 @@ export type Database = {
             }
             clients: {
                 Row: {
+                    avg_comments: number | null
+                    avg_like: number | null
+                    avg_views: number | null
                     brief: string | null
                     category: string | null
                     content_strategy: string[] | null
@@ -130,6 +133,9 @@ export type Database = {
                     views_count: number | null
                 }
                 Insert: {
+                    avg_comments?: number | null
+                    avg_like?: number | null
+                    avg_views?: number | null
                     brief?: string | null
                     category?: string | null
                     content_strategy?: string[] | null
@@ -151,6 +157,9 @@ export type Database = {
                     views_count?: number | null
                 }
                 Update: {
+                    avg_comments?: number | null
+                    avg_like?: number | null
+                    avg_views?: number | null
                     brief?: string | null
                     category?: string | null
                     content_strategy?: string[] | null
@@ -177,7 +186,7 @@ export type Database = {
                 Row: {
                     client_id: string
                     created_at: string
-                    generated_content: Json | null
+                    generated_content: string | null
                     id: string
                     is_saved: boolean | null
                     likes: number | null
@@ -187,13 +196,13 @@ export type Database = {
                     status: string
                     thumbnail_url: string | null
                     title: string
-                    url: string | null
+                    url: string
                     views: number | null
                 }
                 Insert: {
                     client_id: string
                     created_at?: string
-                    generated_content?: Json | null
+                    generated_content?: string | null
                     id?: string
                     is_saved?: boolean | null
                     likes?: number | null
@@ -203,13 +212,13 @@ export type Database = {
                     status?: string
                     thumbnail_url?: string | null
                     title: string
-                    url?: string | null
+                    url: string
                     views?: number | null
                 }
                 Update: {
                     client_id?: string
                     created_at?: string
-                    generated_content?: Json | null
+                    generated_content?: string | null
                     id?: string
                     is_saved?: boolean | null
                     likes?: number | null
@@ -219,7 +228,7 @@ export type Database = {
                     status?: string
                     thumbnail_url?: string | null
                     title?: string
-                    url?: string | null
+                    url?: string
                     views?: number | null
                 }
                 Relationships: [
@@ -260,6 +269,35 @@ export type Database = {
                 Relationships: [
                     {
                         foreignKeyName: "content_markers_client_id_fkey"
+                        columns: ["client_id"]
+                        isOneToOne: false
+                        referencedRelation: "clients"
+                        referencedColumns: ["id"]
+                    },
+                ]
+            }
+            followers_growth: {
+                Row: {
+                    client_id: string | null
+                    created_at: string
+                    followers: number | null
+                    id: number
+                }
+                Insert: {
+                    client_id?: string | null
+                    created_at?: string
+                    followers?: number | null
+                    id?: number
+                }
+                Update: {
+                    client_id?: string | null
+                    created_at?: string
+                    followers?: number | null
+                    id?: number
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "followers_growth_client_id_fkey"
                         columns: ["client_id"]
                         isOneToOne: false
                         referencedRelation: "clients"
@@ -347,65 +385,13 @@ export type Database = {
                     },
                 ]
             }
-            posts_scaped: {
-                Row: {
-                    cliente_conectado: string | null
-                    commentsCount: number | null
-                    created_at: string
-                    displayUrl: string | null
-                    id: number
-                    likesCount: number | null
-                    plataform: string | null
-                    postCaption: string | null
-                    postId: string | null
-                    postUrl: string | null
-                    videoCount: number | null
-                    videoPlayCount: number | null
-                }
-                Insert: {
-                    cliente_conectado?: string | null
-                    commentsCount?: number | null
-                    created_at?: string
-                    displayUrl?: string | null
-                    id?: number
-                    likesCount?: number | null
-                    plataform?: string | null
-                    postCaption?: string | null
-                    postId?: string | null
-                    postUrl?: string | null
-                    videoCount?: number | null
-                    videoPlayCount?: number | null
-                }
-                Update: {
-                    cliente_conectado?: string | null
-                    commentsCount?: number | null
-                    created_at?: string
-                    displayUrl?: string | null
-                    id?: number
-                    likesCount?: number | null
-                    plataform?: string | null
-                    postCaption?: string | null
-                    postId?: string | null
-                    postUrl?: string | null
-                    videoCount?: number | null
-                    videoPlayCount?: number | null
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "posts_scaped_cliente_conectado_fkey"
-                        columns: ["cliente_conectado"]
-                        isOneToOne: false
-                        referencedRelation: "clients"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
             tracked_profiles: {
                 Row: {
                     avatar_url: string | null
                     client_id: string
                     created_at: string
                     id: string
+                    last_scraped_at: string | null
                     platform: string
                     username: string
                 }
@@ -414,6 +400,7 @@ export type Database = {
                     client_id: string
                     created_at?: string
                     id?: string
+                    last_scraped_at?: string | null
                     platform: string
                     username: string
                 }
@@ -422,6 +409,7 @@ export type Database = {
                     client_id?: string
                     created_at?: string
                     id?: string
+                    last_scraped_at?: string | null
                     platform?: string
                     username?: string
                 }
@@ -454,34 +442,96 @@ export type Database = {
 type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-    TableName extends keyof (PublicSchema["Tables"] & PublicSchema["Views"]),
-> = (PublicSchema["Tables"] & PublicSchema["Views"])[TableName] extends {
-    Row: infer R
-}
+    PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+    | { schema: keyof Database },
+    TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+    ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+            Row: infer R
+        }
     ? R
+    : never
+    : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+            Row: infer R
+        }
+    ? R
+    : never
     : never
 
 export type TablesInsert<
-    TableName extends keyof PublicSchema["Tables"],
-> = PublicSchema["Tables"][TableName] extends {
-    Insert: infer I
-}
+    PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+    TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+    ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+        Insert: infer I
+    }
     ? I
+    : never
+    : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Insert: infer I
+    }
+    ? I
+    : never
     : never
 
 export type TablesUpdate<
-    TableName extends keyof PublicSchema["Tables"],
-> = PublicSchema["Tables"][TableName] extends {
-    Update: infer U
-}
+    PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+    TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+    ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+        Update: infer U
+    }
     ? U
+    : never
+    : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Update: infer U
+    }
+    ? U
+    : never
     : never
 
 export type Enums<
-    EnumName extends keyof PublicSchema["Enums"],
-> = PublicSchema["Enums"][EnumName]
+    PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
+    | { schema: keyof Database },
+    EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+    : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
     PublicCompositeTypeNameOrOptions extends
-    keyof PublicSchema["CompositeTypes"],
-> = PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+    CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+        schema: keyof Database
+    }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+    ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+    : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never

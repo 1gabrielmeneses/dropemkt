@@ -152,6 +152,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
             username: competitor.username,
             platform: competitor.platform,
             avatar_url: competitor.avatarUrl,
+            last_scraped_at: null
         })
         setAddedIds(prev => new Set(prev).add(competitor.id))
     }
