@@ -7,7 +7,7 @@ import { WebhookReelData, triggerScriptWebhook, triggerKeywordSearchWebhook } fr
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Loader2, X } from "lucide-react"
+import { Search, Loader2, X, SlidersHorizontal, ArrowUpDown, ChevronDown, ChevronUp, Eye, Heart, MessageCircle, RotateCcw } from "lucide-react"
 import { VideoModal } from "@/components/discovery/VideoModal"
 import { ScriptModal } from "@/components/discovery/ScriptModal"
 import { ReelCard } from "@/components/discovery/ReelCard"
@@ -33,6 +33,14 @@ export default function DiscoveryPage() {
     const [isSearching, setIsSearching] = useState(false)
     const [platform, setPlatform] = useState<string>("all")
     const [matchContext, setMatchContext] = useState(true)
+
+    // Filter state
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [minViews, setMinViews] = useState<string>("")
+    const [minLikes, setMinLikes] = useState<string>("")
+    const [minComments, setMinComments] = useState<string>("")
+    const [sortBy, setSortBy] = useState<string>("recent")
+    const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc")
 
     const [modalOpen, setModalOpen] = useState(false)
     const [scriptModalOpen, setScriptModalOpen] = useState(false)
@@ -87,6 +95,20 @@ export default function DiscoveryPage() {
         loadReels()
     }, [loadReels])
 
+    // Count active filters
+    const activeFilterCount = [
+        minViews, minLikes, minComments
+    ].filter(v => v !== "").length + (sortBy !== "recent" ? 1 : 0) + (platform !== "all" ? 1 : 0)
+
+    const clearAllFilters = () => {
+        setMinViews("")
+        setMinLikes("")
+        setMinComments("")
+        setSortBy("recent")
+        setSortDirection("desc")
+        setPlatform("all")
+    }
+
     // Apply filters
     useEffect(() => {
         let filtered = [...reels]
@@ -96,13 +118,47 @@ export default function DiscoveryPage() {
             filtered = filtered.filter(r => r.platform === platform)
         }
 
-        /* 
-           Removed local search filtering to prioritize webhook search.
-           The search bar now triggers the webhook to find NEW content.
-        */
+        // View count filter
+        if (minViews) {
+            const min = parseInt(minViews)
+            if (!isNaN(min)) filtered = filtered.filter(r => r.viewCount >= min)
+        }
+
+        // Like count filter
+        if (minLikes) {
+            const min = parseInt(minLikes)
+            if (!isNaN(min)) filtered = filtered.filter(r => r.likeCount >= min)
+        }
+
+        // Comment count filter
+        if (minComments) {
+            const min = parseInt(minComments)
+            if (!isNaN(min)) filtered = filtered.filter(r => r.commentCount >= min)
+        }
+
+        // Sorting
+        filtered.sort((a, b) => {
+            let diff = 0
+            switch (sortBy) {
+                case "views":
+                    diff = a.viewCount - b.viewCount
+                    break
+                case "likes":
+                    diff = a.likeCount - b.likeCount
+                    break
+                case "comments":
+                    diff = a.commentCount - b.commentCount
+                    break
+                case "recent":
+                default:
+                    diff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    break
+            }
+            return sortDirection === "desc" ? -diff : diff
+        })
 
         setFilteredReels(filtered)
-    }, [platform, reels])
+    }, [platform, reels, minViews, minLikes, minComments, sortBy, sortDirection])
 
     const handleSave = async (reel: WebhookReelData) => {
         if (!activeClient) {
@@ -226,7 +282,7 @@ export default function DiscoveryPage() {
                 <p className="text-muted-foreground">Encontre conteúdo viral no seu nicho.</p>
             </div>
 
-            {/* Filters */}
+            {/* Search Bar */}
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
                 <div className="flex-1 space-y-2 w-full">
                     <Label>Buscar por palavras-chave...</Label>
@@ -285,6 +341,134 @@ export default function DiscoveryPage() {
                         </SelectContent>
                     </Select>
                 </div>
+            </div>
+
+            {/* Filter Panel */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                {/* Toggle Header */}
+                <button
+                    onClick={() => setFiltersOpen(!filtersOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                >
+                    <div className="flex items-center gap-2">
+                        <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Filtros avançados</span>
+                        {activeFilterCount > 0 && (
+                            <Badge className="bg-primary text-primary-foreground h-5 min-w-[20px] flex items-center justify-center text-xs px-1.5">
+                                {activeFilterCount}
+                            </Badge>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {activeFilterCount > 0 && (
+                            <span
+                                onClick={(e) => { e.stopPropagation(); clearAllFilters() }}
+                                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1"
+                            >
+                                <RotateCcw className="h-3 w-3" />
+                                Limpar
+                            </span>
+                        )}
+                        {filtersOpen ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                    </div>
+                </button>
+
+                {/* Filter Content */}
+                {filtersOpen && (
+                    <div className="px-4 pb-4 pt-2 border-t border-border/40 space-y-4">
+                        {/* Row 1: Sort controls */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="flex-1 space-y-1.5">
+                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <ArrowUpDown className="h-3 w-3" />
+                                    Ordenar por
+                                </Label>
+                                <Select value={sortBy} onValueChange={setSortBy}>
+                                    <SelectTrigger className="h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="recent">Mais recentes</SelectItem>
+                                        <SelectItem value="views">Visualizações</SelectItem>
+                                        <SelectItem value="likes">Curtidas</SelectItem>
+                                        <SelectItem value="comments">Comentários</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Direção</Label>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 w-full sm:w-auto min-w-[120px] gap-1.5"
+                                    onClick={() => setSortDirection(d => d === "desc" ? "asc" : "desc")}
+                                >
+                                    <ArrowUpDown className="h-3.5 w-3.5" />
+                                    {sortDirection === "desc" ? "Maior → Menor" : "Menor → Maior"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Row 2: Minimum filters */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Views Min */}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Eye className="h-3 w-3" />
+                                    Visualizações mínimas
+                                </Label>
+                                <Input
+                                    type="number"
+                                    placeholder="Ex: 10000"
+                                    value={minViews}
+                                    onChange={(e) => setMinViews(e.target.value)}
+                                    className="h-9 text-sm"
+                                />
+                            </div>
+
+                            {/* Likes Min */}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Heart className="h-3 w-3" />
+                                    Curtidas mínimas
+                                </Label>
+                                <Input
+                                    type="number"
+                                    placeholder="Ex: 1000"
+                                    value={minLikes}
+                                    onChange={(e) => setMinLikes(e.target.value)}
+                                    className="h-9 text-sm"
+                                />
+                            </div>
+
+                            {/* Comments Min */}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <MessageCircle className="h-3 w-3" />
+                                    Comentários mínimos
+                                </Label>
+                                <Input
+                                    type="number"
+                                    placeholder="Ex: 100"
+                                    value={minComments}
+                                    onChange={(e) => setMinComments(e.target.value)}
+                                    className="h-9 text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Results count */}
+                        {!loading && reels.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                Mostrando <strong>{filteredReels.length}</strong> de <strong>{reels.length}</strong> vídeos
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Match Context Toggle */}
