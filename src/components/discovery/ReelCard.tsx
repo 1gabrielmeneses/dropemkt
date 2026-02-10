@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { WebhookReelData } from "@/app/actions/webhook"
 import { cn, getEmbedUrl } from "@/lib/utils"
 import { Play, Heart, MessageCircle } from "lucide-react"
+import { TikTokThumbnail } from "@/components/discovery/TikTokThumbnail"
 
 interface ReelCardProps {
     reel: WebhookReelData
@@ -55,19 +56,30 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
                 {/* Thumbnail with Video Embed */}
                 <div className="relative aspect-[9/16] bg-muted" onClick={handleCardClick}>
                     {reel.videoUrl ? (
-                        <div className="w-full h-full pointer-events-none overflow-hidden relative">
-                            <div className="absolute inset-0 flex items-center justify-center transform scale-[1.7]">
-                                <iframe
-                                    src={getEmbedUrl(reel.videoUrl)}
-                                    className="w-full h-full object-cover"
-                                    frameBorder="0"
-                                    scrolling="no"
-                                    // @ts-expect-error - React needs lowercase allowtransparency for DOM, but TS expects camelCase
-                                    allowtransparency="true"
-                                    allow="encrypted-media"
-                                />
+                        reel.platform === 'tiktok' ? (
+                            <TikTokThumbnail
+                                videoUrl={reel.videoUrl}
+                                platform={reel.platform}
+                                cachedThumbnailUrl={reel.thumbnailUrl || undefined}
+                                postId={reel.id}
+                                className="w-full h-full"
+                                size="card"
+                            />
+                        ) : (
+                            <div className="w-full h-full pointer-events-none overflow-hidden relative">
+                                <div className="absolute inset-0 flex items-center justify-center transform scale-[1.7]">
+                                    <iframe
+                                        src={getEmbedUrl(reel.videoUrl)}
+                                        className="w-full h-full object-cover"
+                                        frameBorder="0"
+                                        scrolling="no"
+                                        // @ts-expect-error - React needs lowercase allowtransparency for DOM, but TS expects camelCase
+                                        allowtransparency="true"
+                                        allow="encrypted-media"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
                             <Play className="h-12 w-12 opacity-50" />

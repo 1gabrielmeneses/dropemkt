@@ -5,8 +5,7 @@ import { ArrowUpRight, Heart, MessageCircle, Bookmark, Maximize2, FileVideo, Fil
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/store/useStore"
 import { MissingDataPlaceholder } from "@/components/dashboard/analytics/MissingDataPlaceholder"
-import { getEmbedUrl } from "@/lib/utils"
-import { useState } from "react"
+import { TikTokThumbnail } from "@/components/discovery/TikTokThumbnail"
 
 interface TopContentListProps {
     onPlay?: (url: string) => void
@@ -43,19 +42,14 @@ export function TopContentList({ onPlay, onViewScript }: TopContentListProps) {
                                     className="h-16 w-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative group-hover:ring-2 ring-primary/20 transition-all cursor-pointer"
                                     onClick={() => onPlay?.(item.url!)}
                                 >
-                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[533px] transform scale-[0.35] origin-center pointer-events-none">
-                                        <iframe
-                                            src={getEmbedUrl(item.url)}
-                                            className="w-full h-full object-cover"
-                                            frameBorder="0"
-                                            scrolling="no"
-                                            // @ts-expect-error - React needs lowercase allowtransparency for DOM
-                                            allowtransparency="true"
-                                            allow="encrypted-media"
-                                        />
-                                    </div>
-                                    {/* Overlay to prevent interaction with iframe since it's just a thumbnail */}
-                                    <div className="absolute inset-0 bg-transparent z-10" />
+                                    <TikTokThumbnail
+                                        videoUrl={item.url}
+                                        platform={item.platform || (item.url?.includes('tiktok.com') ? 'tiktok' : 'instagram')}
+                                        cachedThumbnailUrl={item.thumbnail_url || undefined}
+                                        postId={item.id?.toString()}
+                                        className="w-full h-full"
+                                        size="small"
+                                    />
                                 </div>
                             ) : item.thumbnail_url ? (
                                 <img
@@ -90,8 +84,8 @@ export function TopContentList({ onPlay, onViewScript }: TopContentListProps) {
                                             const isTikTok = platform === 'tiktok'
                                             return (
                                                 <div className={`px-2 py-1 rounded-full text-[10px] font-medium capitalize ${isTikTok
-                                                        ? "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
-                                                        : "bg-pink-500/10 text-pink-500 hover:bg-pink-500/20"
+                                                    ? "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
+                                                    : "bg-pink-500/10 text-pink-500 hover:bg-pink-500/20"
                                                     }`}>
                                                     {platform}
                                                 </div>
