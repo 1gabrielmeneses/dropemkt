@@ -130,7 +130,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-5xl p-0 overflow-hidden bg-black/95 border-none h-[80vh] grid grid-cols-1 md:grid-cols-2">
+            <DialogContent className="sm:max-w-5xl p-0 overflow-hidden bg-black/95 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm h-[80vh] grid grid-cols-1 md:grid-cols-2">
                 {/* Video Section */}
                 <div className="h-full w-full bg-black flex items-center justify-center">
                     <iframe
@@ -144,10 +144,9 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
                     />
                 </div>
 
-                {/* Script Section */}
                 <div className="h-full w-full bg-background p-6 flex flex-col overflow-hidden">
-                    <div className="flex items-center justify-between mb-4 border-b pb-4 border-border/40">
-                        <DialogTitle className="text-2xl font-bold tracking-tight">Roteiro do Vídeo</DialogTitle>
+                    <div className="flex items-center justify-between mb-4 border-b-2 border-black/10 pb-4">
+                        <DialogTitle className="text-2xl font-black uppercase tracking-tight">Roteiro do Vídeo</DialogTitle>
                     </div>
 
                     <div className="flex-1 pr-4 overflow-y-auto custom-scrollbar">
@@ -185,6 +184,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
                                 onClick={() => isScriptSaved ? onRemoveScript?.() : onSaveScript?.()}
                                 variant={isScriptSaved ? "destructive" : "default"}
                                 size="sm"
+                                className={`border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase font-bold hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${isScriptSaved ? "hover:bg-red-600" : ""
+                                    }`}
                             >
                                 {isScriptSaved ? "Remover Roteiro" : "Salvar Roteiro"}
                             </Button>

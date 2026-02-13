@@ -159,18 +159,18 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col transition-all duration-300">
+            <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col transition-all duration-300 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm p-6 bg-white">
                 <DialogHeader className="space-y-1">
-                    <DialogTitle>Descobrir Concorrentes com IA</DialogTitle>
+                    <DialogTitle className="font-black uppercase text-2xl">Descobrir Concorrentes com IA</DialogTitle>
                     <div className="flex items-center justify-between">
-                        <DialogDescription>
+                        <DialogDescription className="text-black font-medium">
                             Buscamos perfis no Instagram baseados no nicho do seu cliente.
                         </DialogDescription>
 
                         {!isSearchExpanded && keywords.length > 0 && (
                             <div className="flex gap-1 ml-4 overflow-hidden">
                                 {keywords.map((k, i) => (
-                                    <Badge key={i} variant="secondary" className="h-5 text-[10px] px-1.5">{k}</Badge>
+                                    <Badge key={i} variant="secondary" className="h-5 text-[10px] px-1.5 border-2 border-black rounded-sm font-bold uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white text-black">{k}</Badge>
                                 ))}
                             </div>
                         )}
@@ -179,7 +179,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                             variant="ghost"
                             size="sm"
                             onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-                            className="h-6 w-6 p-0 ml-auto shrink-0 rounded-full hover:bg-muted"
+                            className="h-8 w-8 p-0 ml-auto shrink-0 rounded-sm border-2 border-black hover:bg-purple-100 hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                         >
                             {isSearchExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
@@ -187,8 +187,8 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                 </DialogHeader>
 
                 {isSearchExpanded && (
-                    <div className="py-4 space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                        <Label>Termo de Busca</Label>
+                    <div className="py-4 space-y-4 animate-in slide-in-from-top-2 fade-in duration-300">
+                        <Label className="font-bold uppercase text-xs">Termo de Busca</Label>
                         <div className="flex gap-4">
                             <div className="relative flex-1 group">
                                 <div className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground z-10 pointer-events-none">
@@ -196,9 +196,9 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                 </div>
 
                                 {/* Tagged Input Container */}
-                                <div className="flex flex-wrap gap-1.5 min-h-[40px] w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all">
+                                <div className="flex flex-wrap gap-1.5 min-h-[44px] w-full rounded-sm border-2 border-black bg-white px-9 py-1.5 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus-within:translate-y-[-2px] focus-within:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
                                     {keywords.map((keyword, index) => (
-                                        <Badge key={index} className="gap-1 pr-1 h-7 bg-blue-600 hover:bg-blue-700 text-white animate-in fade-in zoom-in duration-200">
+                                        <Badge key={index} className="gap-1 pr-1 h-7 bg-primary text-primary-foreground border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-primary/90 hover:translate-y-[-1px] animate-in fade-in zoom-in duration-200 uppercase font-bold text-xs">
                                             {keyword}
                                             <button
                                                 onClick={() => removeKeyword(index)}
@@ -223,7 +223,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                 <Button
                                     onClick={() => handleSearch()}
                                     disabled={loading || (keywords.length === 0 && !query.trim())}
-                                    className="bg-primary text-primary-foreground w-full"
+                                    className="w-full h-[44px] bg-primary text-primary-foreground border-2 border-black rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] uppercase font-bold hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
                                 </Button>
@@ -245,7 +245,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                     {loadingSuggestions ? (
                                         <div className="flex gap-2">
                                             {[1, 2, 3].map(i => (
-                                                <div key={i} className="h-6 w-20 bg-muted animate-pulse rounded-full" />
+                                                <div key={i} className="h-8 w-24 bg-muted animate-pulse rounded-sm border-2 border-black/10" />
                                             ))}
                                         </div>
                                     ) : (
@@ -253,7 +253,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                             <Badge
                                                 key={i}
                                                 variant="outline"
-                                                className="cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors border-dashed"
+                                                className="cursor-pointer bg-white h-8 px-3 border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold uppercase hover:bg-black hover:text-white hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                                                 onClick={() => handleAddSuggestion(keyword)}
                                             >
                                                 + {keyword}
@@ -268,15 +268,15 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
 
                 {loading && (
                     <div className="space-y-2 pb-4">
-                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <div className="flex justify-between text-xs font-bold uppercase mb-1">
                             <span>Analisando mercado social...</span>
                             <span>{Math.round(progress)}%</span>
                         </div>
-                        <Progress value={progress} className="h-1" />
+                        <Progress value={progress} className="h-3 border-2 border-black rounded-full bg-white [&>div]:bg-primary" />
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto min-h-[300px] border rounded-md p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto min-h-[300px] border-2 border-black rounded-sm bg-gray-50 p-4 space-y-4 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.1)]">
                     {loading && results.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-4 py-12">
                             <div className="relative">
@@ -297,9 +297,9 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                     )}
 
                     {results.map((competitor) => (
-                        <div key={competitor.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <Avatar className="h-10 w-10 shrink-0">
+                        <div key={competitor.id} className="flex items-center justify-between p-4 border-2 border-black rounded-sm bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all group">
+                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                                <Avatar className="h-12 w-12 shrink-0 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                     <AvatarImage
                                         src={competitor.avatarUrl}
                                         referrerPolicy="no-referrer"
@@ -316,7 +316,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                         </div>
                                         <div className="flex gap-1">
                                             {competitor.followersCount !== undefined && (
-                                                <Badge variant="secondary" className="text-[10px] h-4 px-1 shrink-0 whitespace-nowrap">
+                                                <Badge variant="secondary" className="text-[10px] h-5 px-1.5 shrink-0 whitespace-nowrap border-2 border-black rounded-sm font-bold bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                                     {competitor.followersCount > 1000000
                                                         ? `${(competitor.followersCount / 1000000).toFixed(1)}M`
                                                         : competitor.followersCount > 1000
@@ -325,7 +325,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                                 </Badge>
                                             )}
                                             {competitor.postsCount !== undefined && (
-                                                <Badge variant="outline" className="text-[10px] h-4 px-1 shrink-0 whitespace-nowrap">
+                                                <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 whitespace-nowrap border-2 border-black rounded-sm font-bold bg-gray-100 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                                     {competitor.postsCount} posts
                                                 </Badge>
                                             )}
@@ -338,7 +338,7 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                                    className="h-10 w-10 p-0 text-black border-2 border-black rounded-sm hover:bg-purple-100 hover:text-black hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                                     asChild
                                 >
                                     <a href={competitor.profileUrl} target="_blank" rel="noopener noreferrer">
@@ -350,7 +350,10 @@ export function CompetitorDiscoveryModal({ open, onOpenChange, defaultQuery = ""
                                     variant={addedIds.has(competitor.id) ? "secondary" : "outline"}
                                     disabled={addedIds.has(competitor.id)}
                                     onClick={() => handleAdd(competitor)}
-                                    className="h-8"
+                                    className={`h-10 px-4 border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold uppercase transition-all ${addedIds.has(competitor.id)
+                                            ? "bg-green-100 text-green-700 opacity-100"
+                                            : "bg-white hover:bg-black hover:text-white hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                        }`}
                                 >
                                     {addedIds.has(competitor.id) ? (
                                         <>
