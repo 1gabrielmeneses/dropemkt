@@ -23,16 +23,16 @@ export function AnalysisDashboard({ data, rawClientData }: AnalysisDashboardProp
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-16 p-6 md:p-10 bg-gray-50 min-h-screen">
+        <div id="analysis-dashboard-content" className="max-w-7xl mx-auto space-y-16 p-6 md:p-10 bg-gray-50 min-h-screen">
             {/* Header Section */}
-            <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <section id="analysis-header" className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <AnalysisHeader data={data || undefined} />
             </section>
 
             <Separator className="bg-black h-1" />
 
             {/* Audience Section */}
-            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+            <section id="audience-analysis" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
                 <div className="flex items-center gap-3">
                     <h2 className="text-3xl font-black uppercase tracking-tight bg-black text-white px-4 py-2 transform -rotate-1 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
                         Análise de Audiência
@@ -44,7 +44,7 @@ export function AnalysisDashboard({ data, rawClientData }: AnalysisDashboardProp
             <Separator className="bg-black h-1" />
 
             {/* Niche & Positioning Section */}
-            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+            <section id="niche-positioning" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
                 <div className="flex items-center gap-3">
                     <h2 className="text-3xl font-black uppercase tracking-tight bg-purple-600 text-white px-4 py-2 transform rotate-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         Identidade & Posicionamento
@@ -56,7 +56,7 @@ export function AnalysisDashboard({ data, rawClientData }: AnalysisDashboardProp
             <Separator className="bg-black h-1" />
 
             {/* Content Section */}
-            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+            <section id="content-analysis" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
                 <div className="flex items-center gap-3">
                     <h2 className="text-3xl font-black uppercase tracking-tight bg-white text-black border-2 border-black px-4 py-2 transform rotate-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         Análise de Conteúdo
@@ -72,7 +72,7 @@ export function AnalysisDashboard({ data, rawClientData }: AnalysisDashboardProp
 
             {/* Competition Section */}
             {/* Competition Section */}
-            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
+            <section id="competitive-analysis" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
                 <div className="flex items-center gap-3">
                     <h2 className="text-3xl font-black uppercase tracking-tight bg-red-600 text-white px-4 py-2 transform -rotate-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         Cenário Competitivo
@@ -88,7 +88,7 @@ export function AnalysisDashboard({ data, rawClientData }: AnalysisDashboardProp
             <Separator className="bg-black h-1" />
 
             {/* Strategy Section */}
-            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-700 pb-12">
+            <section id="strategic-roadmap" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-700 pb-12">
                 <div className="flex items-center gap-3">
                     <h2 className="text-3xl font-black uppercase tracking-tight bg-yellow-400 text-black px-4 py-2 transform rotate-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         Plano de Ação

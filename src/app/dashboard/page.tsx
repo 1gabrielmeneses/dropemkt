@@ -75,7 +75,6 @@ export default function DashboardPage() {
         }
     }
 
-
     const handleDeleteProfile = async (id: string) => {
         if (!activeClient) return
         try {
@@ -84,6 +83,73 @@ export default function DashboardPage() {
             toast.success("Competidor removido!", { id: "remove-profile" })
         } catch (error) {
             toast.error("Erro ao remover competidor", { id: "remove-profile" })
+        }
+    }
+
+    // PDF Download Handler
+    const handleDownloadPDF = async () => {
+        if (!activeClient) return
+
+        // Check if we are on the analysis tab by checking for the presence of the header
+        const element = document.getElementById('analysis-dashboard-content')
+        if (!element) {
+            toast.error("Por favor, acesse a aba 'Análise Detalhada' para baixar o PDF.")
+            return
+        }
+
+        // Dynamically import libraries to avoid SSR issues
+        const { toPng } = await import('html-to-image')
+        const { jsPDF } = await import('jspdf')
+
+        toast.loading("Gerando PDF...", { id: "pdf-gen" })
+
+        try {
+            // Options for 1080x1080 output
+            const pdfWidth = 1080
+            const pdfHeight = 1080
+
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'pt',
+                format: [pdfWidth, pdfHeight]
+            })
+
+            // Generate image of the entire dashboard
+            const dataUrl = await toPng(element, {
+                quality: 0.95,
+                pixelRatio: 2, // High resolution
+                cacheBust: true,
+                backgroundColor: '#f9fafb'
+            })
+
+            const imgProps = pdf.getImageProperties(dataUrl)
+            const imgWidth = imgProps.width
+            const imgHeight = imgProps.height
+
+            // Calculate scale to fit width
+            const ratio = pdfWidth / imgWidth
+            const scaledHeight = imgHeight * ratio
+
+            let heightLeft = scaledHeight
+            let position = 0
+
+            // Add first page
+            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, scaledHeight)
+            heightLeft -= pdfHeight
+
+            // Add subsequent pages if needed
+            while (heightLeft > 0) {
+                position -= pdfHeight // Move image up
+                pdf.addPage()
+                pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, scaledHeight)
+                heightLeft -= pdfHeight
+            }
+
+            pdf.save(`${activeClient.name || 'dashboard'}-report.pdf`)
+            toast.success("PDF baixado com sucesso!", { id: "pdf-gen" })
+        } catch (error) {
+            console.error(error)
+            toast.error("Erro ao gerar PDF", { id: "pdf-gen" })
         }
     }
 
@@ -107,6 +173,13 @@ export default function DashboardPage() {
                     <h1 className="text-4xl font-black uppercase tracking-tight text-primary border-b-4 border-black w-fit pr-10 pb-2">DASHBOARD DO PERFIL</h1>
                 </div>
                 <div className="flex gap-2">
+                    <Button
+                        onClick={handleDownloadPDF}
+                        className="bg-black text-white hover:bg-neutral-800 font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all border-2 border-black"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Dashboard
+                    </Button>
                 </div>
             </div>
 
