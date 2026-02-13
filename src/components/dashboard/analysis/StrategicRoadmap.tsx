@@ -82,9 +82,9 @@ function RoadmapList({ items, color }: { items: RecommendationAction[], color: s
             {items.map((item, i) => (
                 <Card key={i} className={`bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-sm hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all h-full`}>
                     <CardHeader className={`border-b-2 border-black pb-4 ${bgMap[color]}`}>
-                        <div className="flex justify-between items-start gap-4">
+                        <div className="flex flex-col gap-4">
                             <CardTitle className="text-lg font-black uppercase leading-tight">{item.action}</CardTitle>
-                            <Badge className="bg-black text-white border-2 border-black rounded-none shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] whitespace-nowrap">
+                            <Badge className="w-fit self-end bg-black text-white border-2 border-black rounded-none shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] whitespace-nowrap">
                                 {item.recommendation}
                             </Badge>
                         </div>
