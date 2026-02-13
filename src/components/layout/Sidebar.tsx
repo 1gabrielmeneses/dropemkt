@@ -58,9 +58,9 @@ export function Sidebar() {
     }, [fetchClients])
 
     return (
-        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background hidden md:flex flex-col">
-            <div className="flex h-14 items-center border-b px-6">
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
+        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r-2 border-black bg-background hidden md:flex flex-col">
+            <div className="flex h-14 items-center border-b-2 border-black px-6">
+                <Link href="/" className="flex items-center gap-2 font-black text-xl text-primary uppercase tracking-tight">
                     Dropê Analytics
                 </Link>
             </div>
@@ -70,14 +70,14 @@ export function Sidebar() {
                 </div>
                 <SidebarContent />
             </div>
-            <div className="p-4 border-t space-y-2">
+            <div className="p-4 border-t-2 border-black space-y-2">
                 <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Tema</span>
+                    <span className="text-sm font-bold uppercase">Tema</span>
                     <ThemeToggle />
                 </div>
                 <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+                    className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground font-bold uppercase"
                     onClick={async () => {
                         const supabase = createClient()
                         await supabase.auth.signOut()
@@ -97,14 +97,14 @@ export function MobileSidebar() {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon" className="md:hidden border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-sm">
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Abrir menu</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 flex flex-col">
-                <div className="flex h-14 items-center border-b px-6">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary" onClick={() => setOpen(false)}>
+            <SheetContent side="left" className="w-64 p-0 flex flex-col border-r-2 border-black">
+                <div className="flex h-14 items-center border-b-2 border-black px-6">
+                    <Link href="/" className="flex items-center gap-2 font-black text-xl text-primary uppercase tracking-tight" onClick={() => setOpen(false)}>
                         Dropê Analytics
                     </Link>
                 </div>
@@ -114,14 +114,14 @@ export function MobileSidebar() {
                     </div>
                 </div>
                 <SidebarContent onItemClick={() => setOpen(false)} />
-                <div className="p-4 border-t mt-auto space-y-2">
+                <div className="p-4 border-t-2 border-black mt-auto space-y-2">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Tema</span>
+                        <span className="text-sm font-bold uppercase">Tema</span>
                         <ThemeToggle />
                     </div>
                     <Button
                         variant="ghost"
-                        className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+                        className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground font-bold uppercase"
                         onClick={async () => {
                             const supabase = createClient()
                             await supabase.auth.signOut()
@@ -155,16 +155,16 @@ function ClientSwitcher() {
             <CreateClientDialog open={createOpen} onOpenChange={setCreateOpen} />
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent>
+                <AlertDialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="font-black uppercase">Tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription className="font-medium text-black">
                             Esta ação não pode ser desfeita. O cliente e todos os dados associados serão excluídos.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        <AlertDialogCancel className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-sm font-bold uppercase hover:bg-gray-100">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-sm font-bold uppercase hover:bg-red-700 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
                             Excluir
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -173,53 +173,53 @@ function ClientSwitcher() {
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between px-3 h-12 font-normal">
+                    <Button variant="outline" className="w-full justify-between px-3 h-12 border-2 border-black rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold uppercase transition-all hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white text-black hover:bg-white hover:text-black">
                         <div className="flex items-center gap-3 truncate">
-                            <Avatar className="h-6 w-6">
+                            <Avatar className="h-6 w-6 border border-black">
                                 <AvatarImage src={activeClient?.logo_url || ""} alt={activeClient?.name || undefined} />
-                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
                                     {activeClient?.name?.[0] || "?"}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="truncate font-medium">{activeClient?.name || "Selecionar cliente"}</span>
+                            <span className="truncate">{activeClient?.name || "Selecionar cliente"}</span>
                         </div>
-                        <ChevronDown className="h-4 w-4 opacity-50" />
+                        <ChevronDown className="h-4 w-4 opacity-100" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-60" align="start">
-                    <DropdownMenuLabel>Meus clientes</DropdownMenuLabel>
+                <DropdownMenuContent className="w-60 border-2 border-black rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" align="start">
+                    <DropdownMenuLabel className="uppercase font-black border-b-2 border-black mb-1">Meus clientes</DropdownMenuLabel>
 
                     {clients.map(client => (
                         <div key={client.id} className="relative flex items-center group">
                             <DropdownMenuItem
                                 onClick={() => setActiveClient(client.id)}
-                                className="flex-1 cursor-pointer gap-3 min-w-0 pr-10 h-12"
+                                className={cn("flex-1 cursor-pointer gap-3 min-w-0 pr-10 h-12 focus:bg-purple-100 focus:text-black font-medium border-2 border-transparent focus:border-black rounded-sm mx-1 my-0.5", activeClientId === client.id && "bg-purple-50")}
                             >
-                                <Avatar className="h-8 w-8">
+                                <Avatar className="h-8 w-8 border border-black">
                                     <AvatarImage src={client.logo_url || ""} alt={client.name || undefined} />
-                                    <AvatarFallback className="bg-muted text-muted-foreground">
+                                    <AvatarFallback className="bg-muted text-muted-foreground font-bold">
                                         {client.name?.[0]}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col truncate">
-                                    <span className={cn("truncate font-medium", activeClientId === client.id && "text-primary")}>
+                                    <span className={cn("truncate font-bold uppercase text-[10px]", activeClientId === client.id && "text-primary")}>
                                         {client.name}
                                     </span>
                                     {client.brief && (
-                                        <span className="text-xs text-muted-foreground truncate w-32">
+                                        <span className="text-[10px] text-muted-foreground truncate w-32 font-medium">
                                             {client.brief.split('\n')[0]}
                                         </span>
                                     )}
                                 </div>
                                 {activeClientId === client.id && (
-                                    <div className="absolute right-9 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
+                                    <div className="absolute right-9 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-black border border-white ring-1 ring-black" />
                                 )}
                             </DropdownMenuItem>
 
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-black hover:bg-red-100 hover:text-red-600 border border-transparent hover:border-black rounded-sm"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     setDeleteId(client.id)
@@ -230,10 +230,10 @@ function ClientSwitcher() {
                         </div>
                     ))}
 
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-black" />
                     <DropdownMenuItem
                         onClick={() => setCreateOpen(true)}
-                        className="gap-2 text-muted-foreground hover:text-primary cursor-pointer h-10"
+                        className="gap-2 text-primary font-bold uppercase cursor-pointer h-10 hover:bg-primary/10 focus:bg-primary/10 mx-1 border-2 border-transparent focus:border-primary/50 rounded-sm"
                     >
                         <PlusCircle className="h-4 w-4" />
                         Novo cliente
@@ -247,15 +247,17 @@ function ClientSwitcher() {
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
     const pathname = usePathname()
     return (
-        <nav className="grid gap-1 px-2">
+        <nav className="grid gap-2 px-2">
             {items.map((item) => (
                 <Link
                     key={item.title}
                     href={item.url}
                     onClick={onItemClick}
                     className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                        pathname === item.url ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                        "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-bold uppercase transition-all",
+                        pathname === item.url
+                            ? "bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-1px]"
+                            : "text-muted-foreground hover:bg-purple-100 hover:text-black hover:border-black border-2 border-transparent hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                     )}
                 >
                     <item.icon className="h-4 w-4" />

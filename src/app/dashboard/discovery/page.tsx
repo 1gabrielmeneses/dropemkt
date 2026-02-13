@@ -275,31 +275,31 @@ export default function DiscoveryPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 pb-10">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-primary">Motor de descoberta</h1>
-                <p className="text-muted-foreground">Encontre conteúdo viral no seu nicho.</p>
+                <h1 className="text-4xl font-black uppercase tracking-tight text-primary border-b-4 border-black w-fit pr-10 pb-2">Motor de descoberta</h1>
+                <p className="text-lg font-medium text-black/70 mt-2">Encontre conteúdo viral no seu nicho.</p>
             </div>
 
             {/* Search Bar */}
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
                 <div className="flex-1 space-y-2 w-full">
-                    <Label>Buscar por palavras-chave...</Label>
+                    <Label className="font-bold uppercase">Buscar por palavras-chave...</Label>
                     <div className="flex gap-2">
                         <div className="relative flex-1 group">
-                            <div className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground z-10 pointer-events-none">
+                            <div className="absolute left-3 top-3 h-4 w-4 text-black z-10 pointer-events-none">
                                 <Search className="h-4 w-4" />
                             </div>
 
                             {/* Tagged Input Container */}
-                            <div className="flex flex-wrap gap-1.5 min-h-[40px] w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                            <div className="flex flex-wrap gap-1.5 min-h-[46px] w-full rounded-sm border-2 border-black bg-white px-9 py-2 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus-within:translate-y-[1px] focus-within:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
                                 {keywords.map((keyword, index) => (
-                                    <Badge key={index} className="gap-1 pr-1 h-7 bg-blue-600 hover:bg-blue-700 text-white">
+                                    <Badge key={index} className="gap-1 pr-1 h-7 bg-blue-600 hover:bg-blue-700 text-white border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs font-bold uppercase">
                                         {keyword}
                                         <button
                                             onClick={() => removeKeyword(index)}
-                                            className="ml-0.5 hover:bg-blue-800 rounded-full p-0.5"
+                                            className="ml-0.5 hover:bg-blue-800 rounded-sm p-0.5"
                                         >
                                             <X className="h-3 w-3" />
                                             <span className="sr-only">Remover</span>
@@ -307,7 +307,7 @@ export default function DiscoveryPage() {
                                     </Badge>
                                 ))}
                                 <input
-                                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px]"
+                                    className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px] font-medium"
                                     placeholder={keywords.length === 0 ? "Palavras-chave (ex: marketing, viral)" : ""}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -319,42 +319,40 @@ export default function DiscoveryPage() {
                         <Button
                             onClick={handleSearch}
                             disabled={isSearching || (keywords.length === 0 && !searchQuery.trim())}
+                            className="bg-black text-white border-2 border-black rounded-sm font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-800 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] h-[46px] px-8"
                         >
                             {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pesquisar"}
                         </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                        Digite e pressione <strong>Enter</strong> para criar uma palavra-chave. Recomendamos usar no máximo <strong>3 palavras-chave</strong>.
-                    </p>
                 </div>
 
                 <div className="w-full md:w-[200px] space-y-2">
-                    <Label>Plataforma</Label>
+                    <Label className="font-bold uppercase">Plataforma</Label>
                     <Select value={platform} onValueChange={setPlatform}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-black rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold uppercase h-[46px] focus:ring-0 focus:ring-offset-0 active:translate-y-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todas as plataformas</SelectItem>
-                            <SelectItem value="instagram">Instagram</SelectItem>
-                            <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectContent className="border-2 border-black rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <SelectItem value="all" className="font-medium focus:bg-purple-100 focus:text-black focus:font-bold uppercase cursor-pointer">Todas as plataformas</SelectItem>
+                            <SelectItem value="instagram" className="font-medium focus:bg-pink-100 focus:text-pink-600 focus:font-bold uppercase cursor-pointer">Instagram</SelectItem>
+                            <SelectItem value="tiktok" className="font-medium focus:bg-purple-100 focus:text-purple-600 focus:font-bold uppercase cursor-pointer">TikTok</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
             </div>
 
             {/* Filter Panel */}
-            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+            <div className="rounded-sm border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
                 {/* Toggle Header */}
                 <button
                     onClick={() => setFiltersOpen(!filtersOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-purple-50 transition-colors"
                 >
                     <div className="flex items-center gap-2">
-                        <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Filtros avançados</span>
+                        <SlidersHorizontal className="h-4 w-4 text-black" />
+                        <span className="text-sm font-bold uppercase">Filtros avançados</span>
                         {activeFilterCount > 0 && (
-                            <Badge className="bg-primary text-primary-foreground h-5 min-w-[20px] flex items-center justify-center text-xs px-1.5">
+                            <Badge className="bg-primary text-primary-foreground h-5 min-w-[20px] flex items-center justify-center text-xs px-1.5 border border-black rounded-sm font-bold">
                                 {activeFilterCount}
                             </Badge>
                         )}
@@ -363,48 +361,48 @@ export default function DiscoveryPage() {
                         {activeFilterCount > 0 && (
                             <span
                                 onClick={(e) => { e.stopPropagation(); clearAllFilters() }}
-                                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1"
+                                className="text-xs text-black font-bold hover:underline cursor-pointer flex items-center gap-1 uppercase"
                             >
                                 <RotateCcw className="h-3 w-3" />
                                 Limpar
                             </span>
                         )}
                         {filtersOpen ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                            <ChevronUp className="h-4 w-4 text-black" />
                         ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            <ChevronDown className="h-4 w-4 text-black" />
                         )}
                     </div>
                 </button>
 
                 {/* Filter Content */}
                 {filtersOpen && (
-                    <div className="px-4 pb-4 pt-2 border-t border-border/40 space-y-4">
+                    <div className="px-4 pb-6 pt-4 border-t-2 border-black space-y-6 bg-gray-50/50">
                         {/* Row 1: Sort controls */}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="flex-1 space-y-1.5">
-                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1 space-y-2">
+                                <Label className="text-xs font-bold uppercase flex items-center gap-1">
                                     <ArrowUpDown className="h-3 w-3" />
                                     Ordenar por
                                 </Label>
                                 <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className="h-9">
+                                    <SelectTrigger className="h-10 border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold uppercase bg-white focus:ring-0">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="recent">Mais recentes</SelectItem>
-                                        <SelectItem value="views">Visualizações</SelectItem>
-                                        <SelectItem value="likes">Curtidas</SelectItem>
-                                        <SelectItem value="comments">Comentários</SelectItem>
+                                    <SelectContent className="border-2 border-black rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                        <SelectItem value="recent" className="font-bold uppercase focus:bg-purple-100 cursor-pointer">Mais recentes</SelectItem>
+                                        <SelectItem value="views" className="font-bold uppercase focus:bg-purple-100 cursor-pointer">Visualizações</SelectItem>
+                                        <SelectItem value="likes" className="font-bold uppercase focus:bg-purple-100 cursor-pointer">Curtidas</SelectItem>
+                                        <SelectItem value="comments" className="font-bold uppercase focus:bg-purple-100 cursor-pointer">Comentários</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground">Direção</Label>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase">Direção</Label>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-9 w-full sm:w-auto min-w-[120px] gap-1.5"
+                                    className="h-10 w-full sm:w-auto min-w-[140px] gap-2 border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold uppercase bg-white hover:bg-gray-100 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] transition-all"
                                     onClick={() => setSortDirection(d => d === "desc" ? "asc" : "desc")}
                                 >
                                     <ArrowUpDown className="h-3.5 w-3.5" />
@@ -414,10 +412,10 @@ export default function DiscoveryPage() {
                         </div>
 
                         {/* Row 2: Minimum filters */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             {/* Views Min */}
-                            <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase flex items-center gap-1">
                                     <Eye className="h-3 w-3" />
                                     Visualizações mínimas
                                 </Label>
@@ -426,13 +424,13 @@ export default function DiscoveryPage() {
                                     placeholder="Ex: 10000"
                                     value={minViews}
                                     onChange={(e) => setMinViews(e.target.value)}
-                                    className="h-9 text-sm"
+                                    className="h-10 text-sm border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-medium bg-white focus-visible:ring-0 focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] focus:translate-y-[-1px] transition-all"
                                 />
                             </div>
 
                             {/* Likes Min */}
-                            <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase flex items-center gap-1">
                                     <Heart className="h-3 w-3" />
                                     Curtidas mínimas
                                 </Label>
@@ -441,13 +439,13 @@ export default function DiscoveryPage() {
                                     placeholder="Ex: 1000"
                                     value={minLikes}
                                     onChange={(e) => setMinLikes(e.target.value)}
-                                    className="h-9 text-sm"
+                                    className="h-10 text-sm border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-medium bg-white focus-visible:ring-0 focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] focus:translate-y-[-1px] transition-all"
                                 />
                             </div>
 
                             {/* Comments Min */}
-                            <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase flex items-center gap-1">
                                     <MessageCircle className="h-3 w-3" />
                                     Comentários mínimos
                                 </Label>
@@ -456,15 +454,15 @@ export default function DiscoveryPage() {
                                     placeholder="Ex: 100"
                                     value={minComments}
                                     onChange={(e) => setMinComments(e.target.value)}
-                                    className="h-9 text-sm"
+                                    className="h-10 text-sm border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-medium bg-white focus-visible:ring-0 focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] focus:translate-y-[-1px] transition-all"
                                 />
                             </div>
                         </div>
 
                         {/* Results count */}
                         {!loading && reels.length > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                                Mostrando <strong>{filteredReels.length}</strong> de <strong>{reels.length}</strong> vídeos
+                            <p className="text-xs font-bold uppercase text-muted-foreground flex justify-end">
+                                Mostrando <strong className="text-black mx-1">{filteredReels.length}</strong> de <strong className="text-black mx-1">{reels.length}</strong> vídeos
                             </p>
                         )}
                     </div>
@@ -474,14 +472,15 @@ export default function DiscoveryPage() {
             {/* Match Context Toggle */}
             {
                 activeClient && (
-                    <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center space-x-2 p-4 bg-white rounded-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         <Checkbox
                             id="match-context"
                             checked={matchContext}
                             onCheckedChange={(checked) => setMatchContext(checked as boolean)}
+                            className="border-2 border-black h-5 w-5 rounded-sm data-[state=checked]:bg-black data-[state=checked]:text-white"
                         />
-                        <Label htmlFor="match-context" className="cursor-pointer">
-                            Contexto do cliente: <span className="text-primary font-medium">{activeClient.name}</span>
+                        <Label htmlFor="match-context" className="cursor-pointer font-bold uppercase">
+                            Contexto do cliente: <span className="text-primary ml-1">{activeClient.name}</span>
                         </Label>
                     </div>
                 )
@@ -491,10 +490,10 @@ export default function DiscoveryPage() {
             {
                 loading && (
                     <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <Loader2 className="h-12 w-12 animate-spin text-black" />
                         <div className="text-center">
-                            <p className="font-medium">Buscando conteúdo viral...</p>
-                            <p className="text-sm text-muted-foreground">Analisando perfis dos concorrentes</p>
+                            <p className="font-black uppercase text-lg">Buscando conteúdo viral...</p>
+                            <p className="text-sm font-medium text-muted-foreground">Analisando perfis dos concorrentes</p>
                         </div>
                     </div>
                 )
@@ -506,13 +505,13 @@ export default function DiscoveryPage() {
                     <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-in fade-in duration-300">
                         <div className="relative">
                             <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
-                            <div className="bg-primary/10 p-4 rounded-full">
+                            <div className="bg-primary/10 p-4 rounded-full border-2 border-primary">
                                 <Search className="h-8 w-8 text-primary animate-pulse" />
                             </div>
                         </div>
                         <div className="text-center space-y-2">
-                            <h3 className="text-lg font-semibold">Buscando novos vídeos...</h3>
-                            <p className="text-sm text-muted-foreground">
+                            <h3 className="text-xl font-black uppercase">Buscando novos vídeos...</h3>
+                            <p className="text-sm font-medium text-muted-foreground">
                                 Isto pode levar alguns segundos.
                             </p>
                         </div>
@@ -523,11 +522,11 @@ export default function DiscoveryPage() {
             {/* Empty State */}
             {
                 !loading && !isSearching && filteredReels.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed border-black/30 rounded-sm">
                         <div className="text-6xl">🔍</div>
                         <div>
-                            <p className="font-medium text-lg">Nenhum conteúdo encontrado</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="font-black uppercase text-xl">Nenhum conteúdo encontrado</p>
+                            <p className="text-sm font-medium text-muted-foreground max-w-md mx-auto mt-2">
                                 {reels.length === 0
                                     ? "Adicione concorrentes para começar a descobrir conteúdo viral"
                                     : "Tente ajustar os filtros de busca"}
@@ -540,7 +539,7 @@ export default function DiscoveryPage() {
             {/* Reels Grid */}
             {
                 !loading && !isSearching && filteredReels.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                         {filteredReels.map((reel) => (
                             <ReelCard
                                 key={reel.id}
@@ -552,6 +551,7 @@ export default function DiscoveryPage() {
                                 onSave={handleSave}
                                 onRemove={handleRemove}
                                 isSaved={savedPostIds.has(reel.id)}
+                                className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-sm hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-4px]"
                                 onOpenScript={async (reel) => {
                                     setSelectedScriptVideoUrl(reel.videoUrl)
                                     setSelectedScriptReel(reel)

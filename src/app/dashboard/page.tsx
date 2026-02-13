@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { AnalysisProfile } from "@/types/analysis"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Download, Users } from "lucide-react"
@@ -20,6 +21,10 @@ import { ReelCard } from "@/components/discovery/ReelCard"
 import { VideoModal } from "@/components/discovery/VideoModal"
 import { ScriptModal } from "@/components/discovery/ScriptModal"
 import { toast } from "sonner"
+import { AnalysisDashboard } from "@/components/dashboard/analysis/AnalysisDashboard"
+import { CompetitorsTab } from "@/components/dashboard/competitors/CompetitorsTab"
+import { AnalyzedContentTab } from "@/components/dashboard/analysis/AnalyzedContentTab"
+
 
 export default function DashboardPage() {
     const { getActiveClient, removeProfile } = useStore()
@@ -99,19 +104,21 @@ export default function DashboardPage() {
 
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">Resumo do perfil</h1>
+                    <h1 className="text-4xl font-black uppercase tracking-tight text-primary border-b-4 border-black w-fit pr-10 pb-2">DASHBOARD DO PERFIL</h1>
                 </div>
                 <div className="flex gap-2">
                 </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs defaultValue="analysis" className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <TabsList className="bg-transparent p-0 gap-2">
-                        <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Resumo da conta</TabsTrigger>
+                    <TabsList className="bg-transparent p-0 gap-4">
+                        <TabsTrigger value="analysis" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black rounded-sm font-bold uppercase transition-all bg-white text-black hover:-translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6">Análise Detalhada</TabsTrigger>
+                        {/* <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Resumo da conta</TabsTrigger> */}
 
-                        <TabsTrigger value="profiles" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Competidores</TabsTrigger>
-                        <TabsTrigger value="analyzed" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Conteúdo analisado</TabsTrigger>
+                        <TabsTrigger value="profiles" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black rounded-sm font-bold uppercase transition-all bg-white text-black hover:-translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6">Competidores</TabsTrigger>
+                        <TabsTrigger value="analyzed" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black rounded-sm font-bold uppercase transition-all bg-white text-black hover:-translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6">Conteúdo analisado</TabsTrigger>
+                        {/* <TabsTrigger value="analysis" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=inactive]:border-border data-[state=inactive]:bg-background">Análise Detalhada</TabsTrigger> */}
                     </TabsList>
                 </div>
 
@@ -203,39 +210,12 @@ export default function DashboardPage() {
                 </TabsContent>
 
                 <TabsContent value="profiles" className="space-y-10">
-                    <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setAddProfileOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Adicionar manual
-                        </Button>
-                        <Button onClick={() => setDiscoveryOpen(true)} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0">
-                            <Users className="mr-2 h-4 w-4" />
-                            Descoberta com IA
-                        </Button>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {activeClient.profiles.length === 0 ? (
-                            <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
-                                <h3 className="text-lg font-medium mb-2">Nenhum competidor adicionado</h3>
-                                <p className="mb-4">Adicione competidores para analisar a estratégia deles.</p>
-                                <Button onClick={() => setDiscoveryOpen(true)}>Encontrar competidores</Button>
-                            </div>
-                        ) : (
-                            activeClient.profiles.map((profile) => (
-                                <ProfileCard
-                                    key={profile.id}
-                                    id={profile.id}
-                                    name={profile.username || ""}
-                                    handle={profile.username || ""}
-                                    platform={profile.platform as "instagram" | "tiktok" | "youtube"}
-                                    tags={[]}
-                                    avatarUrl={profile.avatar_url || undefined}
-                                    onDelete={handleDeleteProfile}
-                                />
-                            ))
-                        )}
-                    </div>
+                    <CompetitorsTab
+                        profiles={activeClient.profiles}
+                        onAddManual={() => setAddProfileOpen(true)}
+                        onDiscovery={() => setDiscoveryOpen(true)}
+                        onDelete={handleDeleteProfile}
+                    />
                 </TabsContent>
 
                 <CompetitorDiscoveryModal
@@ -245,71 +225,108 @@ export default function DashboardPage() {
                 />
 
                 <TabsContent value="analyzed">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                        {savedPosts.length === 0 ? (
-                            <div className="col-span-full flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground gap-4">
-                                <p>Use a aba Discovery para encontrar e analisar conteúdo.</p>
-                            </div>
-                        ) : (
-                            savedPosts.map(post => (
-                                <ReelCard
-                                    key={post.id}
-                                    reel={post}
-                                    isSaved={true}
-                                    onRemove={handleRemoveSaved}
-                                    onPlay={(url) => {
-                                        setSelectedVideoUrl(url)
-                                        setVideoModalOpen(true)
-                                    }}
-                                    onOpenScript={async (reel) => {
-                                        setSelectedScriptVideoUrl(reel.videoUrl)
-                                        setSelectedScriptReel(reel)
-                                        setScriptContent("")
-                                        setScriptModalOpen(true)
+                    <AnalyzedContentTab
+                        posts={savedPosts}
+                        onRemove={handleRemoveSaved}
+                        onPlay={(url) => {
+                            setSelectedVideoUrl(url)
+                            setVideoModalOpen(true)
+                        }}
+                        onOpenScript={async (reel) => {
+                            setSelectedScriptVideoUrl(reel.videoUrl)
+                            setSelectedScriptReel(reel)
+                            setScriptContent("")
+                            setScriptModalOpen(true)
 
-                                        if (savedScripts[reel.id]) {
-                                            setScriptContent(savedScripts[reel.id])
-                                            return
-                                        }
+                            if (savedScripts[reel.id]) {
+                                setScriptContent(savedScripts[reel.id])
+                                return
+                            }
 
-                                        setScriptLoading(true)
+                            setScriptLoading(true)
 
-                                        try {
-                                            const result = await triggerScriptWebhook(reel.id)
+                            try {
+                                const result = await triggerScriptWebhook(reel.id)
 
-                                            if (result.success && result.data) {
-                                                let content = ""
-                                                const data = result.data
+                                if (result.success && result.data) {
+                                    let content = ""
+                                    const data = result.data
 
-                                                const extractText = (obj: any): string => {
-                                                    if (!obj) return ""
-                                                    if (typeof obj === 'string') return obj
-                                                    if (Array.isArray(obj)) return obj.length > 0 ? extractText(obj[0]) : ""
-                                                    if (obj.content?.parts?.[0]?.text) return obj.content.parts[0].text
-                                                    if (obj.output) return extractText(obj.output)
-                                                    if (obj.script) return extractText(obj.script)
-                                                    if (obj.text) return extractText(obj.text)
-                                                    if (obj.content && typeof obj.content === 'string') return obj.content
-                                                    return JSON.stringify(obj, null, 2)
-                                                }
+                                    const extractText = (obj: any): string => {
+                                        if (!obj) return ""
+                                        if (typeof obj === 'string') return obj
+                                        if (Array.isArray(obj)) return obj.length > 0 ? extractText(obj[0]) : ""
+                                        if (obj.content?.parts?.[0]?.text) return obj.content.parts[0].text
+                                        if (obj.output) return extractText(obj.output)
+                                        if (obj.script) return extractText(obj.script)
+                                        if (obj.text) return extractText(obj.text)
+                                        if (obj.content && typeof obj.content === 'string') return obj.content
+                                        return JSON.stringify(obj, null, 2)
+                                    }
 
-                                                content = extractText(data)
-                                                setScriptContent(content)
-                                                toast.success('Roteiro gerado com sucesso!')
-                                            } else {
-                                                toast.error('Erro ao gerar roteiro')
-                                                setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
-                                            }
-                                        } catch (error) {
-                                            toast.error('Erro ao conectar com o serviço de IA')
-                                        } finally {
-                                            setScriptLoading(false)
-                                        }
-                                    }}
-                                />
-                            ))
-                        )}
-                    </div>
+                                    content = extractText(data)
+                                    setScriptContent(content)
+                                    toast.success('Roteiro gerado com sucesso!')
+                                } else {
+                                    toast.error('Erro ao gerar roteiro')
+                                    setScriptContent("Não foi possível gerar o roteiro. Tente novamente.")
+                                }
+                            } catch (error) {
+                                toast.error('Erro ao conectar com o serviço de IA')
+                            } finally {
+                                setScriptLoading(false)
+                            }
+                        }}
+                    />
+                </TabsContent>
+                <TabsContent value="analysis">
+                    {(() => {
+                        const basicInfo = {
+                            username: activeClient.instagram_username || "@perfil",
+                            display_name: activeClient.name || "Perfil",
+                            biography: activeClient.niche_description || activeClient.brief || "Sem biografia disponível.",
+                            followers: activeClient.followers_count || 0,
+                            following: 0,
+                            total_posts: activeClient.posts_count || 0,
+                            engagement_rate: "N/A",
+                            category: "Geral",
+                            account_type: "Business",
+                            external_link: "",
+                            story_highlights: {
+                                analysis: "N/A",
+                                total_count: 0
+                            },
+                            biography_analysis: "N/A",
+                            relevant_connections: {
+                                analysis: "N/A",
+                                followed_by: "N/A"
+                            }
+                        }
+
+
+
+                        // Filter out relationship data to only show client table columns
+                        const { profiles, savedContent, calendarEvents, apiTokens, ...clientData } = activeClient
+
+                        // Cast clientData to include missing JSON columns that are not in the Supabase types yet
+                        const fullClientData = clientData as any
+
+                        const analysisData: AnalysisProfile = {
+                            ...fullClientData,
+                            basic_profile_info: basicInfo,
+                            // Ensure nested objects are present to avoid crashes if DB data is missing
+                            audience: fullClientData.audience || { desires: [], pain_points: [], demographics: {}, psychographics: {} },
+                            niche_and_positioning: fullClientData.niche_and_positioning,
+                            content_categorization: fullClientData.content_categorization,
+                            top_viral_posts: fullClientData.top_viral_posts || [],
+                            competitive_landscape: fullClientData.competitive_landscape,
+                            swot_analysis: fullClientData.swot_analysis,
+                            strategic_recommendations: fullClientData.strategic_recommendations,
+                            executive_summary: fullClientData.executive_summary
+                        }
+
+                        return <AnalysisDashboard data={analysisData} />
+                    })()}
                 </TabsContent>
 
 

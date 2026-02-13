@@ -17,9 +17,10 @@ interface ReelCardProps {
     onPlay?: (url: string) => void
     onOpenScript?: (reel: WebhookReelData) => void
     isSaved?: boolean
+    className?: string
 }
 
-export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved = false }: ReelCardProps) {
+export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved = false, className }: ReelCardProps) {
     const [isHovered, setIsHovered] = useState(false)
     const [showCaptionModal, setShowCaptionModal] = useState(false)
 
@@ -48,7 +49,10 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
     return (
         <>
             <Card
-                className="overflow-hidden cursor-pointer transition-all hover:shadow-lg group bg-card border-border h-full flex flex-col"
+                className={cn(
+                    "overflow-hidden cursor-pointer transition-all hover:shadow-lg group bg-card border-border h-full flex flex-col",
+                    className
+                )}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
@@ -137,7 +141,7 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
                         <Button
                             size="sm"
                             variant="secondary"
-                            className="flex-1"
+                            className="flex-1 border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold uppercase hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all bg-white hover:bg-gray-100"
                             onClick={(e) => {
                                 e.stopPropagation()
                                 if (onOpenScript) onOpenScript(reel)
@@ -148,7 +152,12 @@ export function ReelCard({ reel, onSave, onRemove, onPlay, onOpenScript, isSaved
                         <Button
                             size="sm"
                             variant={isSaved ? "destructive" : "default"}
-                            className="flex-1"
+                            className={cn(
+                                "flex-1 border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold uppercase hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all",
+                                isSaved
+                                    ? "bg-red-600 hover:bg-red-700 text-white"
+                                    : "bg-black hover:bg-gray-800 text-white"
+                            )}
                             onClick={(e) => {
                                 e.stopPropagation()
                                 if (isSaved) {
