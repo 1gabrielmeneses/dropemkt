@@ -25,7 +25,7 @@ import { useState, useEffect } from "react"
 import { useStore } from "@/store/useStore"
 import { CreateClientDialog } from "@/components/dashboard/CreateClientDialog"
 import { Trash2 } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
+
 
 const items = [
     {
@@ -71,10 +71,7 @@ export function Sidebar() {
                 <SidebarContent />
             </div>
             <div className="p-4 border-t-2 border-black space-y-2">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold uppercase">Tema</span>
-                    <ThemeToggle />
-                </div>
+
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground font-bold uppercase"
@@ -115,10 +112,7 @@ export function MobileSidebar() {
                 </div>
                 <SidebarContent onItemClick={() => setOpen(false)} />
                 <div className="p-4 border-t-2 border-black mt-auto space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold uppercase">Tema</span>
-                        <ThemeToggle />
-                    </div>
+
                     <Button
                         variant="ghost"
                         className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground font-bold uppercase"
