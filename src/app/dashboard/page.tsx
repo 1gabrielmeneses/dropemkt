@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { AnalysisDashboard } from "@/components/dashboard/analysis/AnalysisDashboard"
 import { CompetitorsTab } from "@/components/dashboard/competitors/CompetitorsTab"
 import { AnalyzedContentTab } from "@/components/dashboard/analysis/AnalyzedContentTab"
+import { CoverSlide } from "@/components/dashboard/pdf/CoverSlide"
 
 
 export default function DashboardPage() {
@@ -92,8 +93,10 @@ export default function DashboardPage() {
 
         // Check if we are on the analysis tab by checking for the presence of the header
         const element = document.getElementById('analysis-dashboard-content')
-        if (!element) {
-            toast.error("Por favor, acesse a aba 'Análise Detalhada' para baixar o PDF.")
+        const coverElement = document.getElementById('pdf-cover-slide')
+
+        if (!element || !coverElement) {
+            toast.error("Por favor, aguarde o carregamento completo para baixar o PDF.")
             return
         }
 
@@ -114,7 +117,17 @@ export default function DashboardPage() {
                 format: [pdfWidth, pdfHeight]
             })
 
-            // Generate image of the entire dashboard
+            // 1. Generate Cover Page
+            const coverDataUrl = await toPng(coverElement, {
+                quality: 0.95,
+                pixelRatio: 2,
+                cacheBust: true,
+            })
+
+            pdf.addImage(coverDataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight)
+            pdf.addPage()
+
+            // 2. Generate Dashboard Content
             const dataUrl = await toPng(element, {
                 quality: 0.95,
                 pixelRatio: 2, // High resolution
@@ -133,7 +146,7 @@ export default function DashboardPage() {
             let heightLeft = scaledHeight
             let position = 0
 
-            // Add first page
+            // Add first page of dashboard content
             pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, scaledHeight)
             heightLeft -= pdfHeight
 
@@ -162,6 +175,45 @@ export default function DashboardPage() {
                 </div>
             </div>
         )
+    }
+
+    // Construct Analysis Data
+    const basicInfo = {
+        username: activeClient.instagram_username || "@perfil",
+        display_name: activeClient.name || "Perfil",
+        biography: activeClient.niche_description || activeClient.brief || "Sem biografia disponível.",
+        followers: activeClient.followers_count || 0,
+        following: 0,
+        total_posts: activeClient.posts_count || 0,
+        engagement_rate: "N/A",
+        category: "Geral",
+        account_type: "Business",
+        external_link: "",
+        story_highlights: {
+            analysis: "N/A",
+            total_count: 0
+        },
+        biography_analysis: "N/A",
+        relevant_connections: {
+            analysis: "N/A",
+            followed_by: "N/A"
+        }
+    }
+
+    const { profiles, savedContent, calendarEvents, apiTokens, ...clientData } = activeClient
+    const fullClientData = clientData as any
+
+    const analysisData: AnalysisProfile = {
+        ...fullClientData,
+        basic_profile_info: basicInfo,
+        audience: fullClientData.audience || { desires: [], pain_points: [], demographics: {}, psychographics: {} },
+        niche_and_positioning: fullClientData.niche_and_positioning,
+        content_categorization: fullClientData.content_categorization,
+        top_viral_posts: fullClientData.top_viral_posts || [],
+        competitive_landscape: fullClientData.competitive_landscape,
+        swot_analysis: fullClientData.swot_analysis,
+        strategic_recommendations: fullClientData.strategic_recommendations,
+        executive_summary: fullClientData.executive_summary
     }
 
     return (
@@ -353,53 +405,7 @@ export default function DashboardPage() {
                     />
                 </TabsContent>
                 <TabsContent value="analysis">
-                    {(() => {
-                        const basicInfo = {
-                            username: activeClient.instagram_username || "@perfil",
-                            display_name: activeClient.name || "Perfil",
-                            biography: activeClient.niche_description || activeClient.brief || "Sem biografia disponível.",
-                            followers: activeClient.followers_count || 0,
-                            following: 0,
-                            total_posts: activeClient.posts_count || 0,
-                            engagement_rate: "N/A",
-                            category: "Geral",
-                            account_type: "Business",
-                            external_link: "",
-                            story_highlights: {
-                                analysis: "N/A",
-                                total_count: 0
-                            },
-                            biography_analysis: "N/A",
-                            relevant_connections: {
-                                analysis: "N/A",
-                                followed_by: "N/A"
-                            }
-                        }
-
-
-
-                        // Filter out relationship data to only show client table columns
-                        const { profiles, savedContent, calendarEvents, apiTokens, ...clientData } = activeClient
-
-                        // Cast clientData to include missing JSON columns that are not in the Supabase types yet
-                        const fullClientData = clientData as any
-
-                        const analysisData: AnalysisProfile = {
-                            ...fullClientData,
-                            basic_profile_info: basicInfo,
-                            // Ensure nested objects are present to avoid crashes if DB data is missing
-                            audience: fullClientData.audience || { desires: [], pain_points: [], demographics: {}, psychographics: {} },
-                            niche_and_positioning: fullClientData.niche_and_positioning,
-                            content_categorization: fullClientData.content_categorization,
-                            top_viral_posts: fullClientData.top_viral_posts || [],
-                            competitive_landscape: fullClientData.competitive_landscape,
-                            swot_analysis: fullClientData.swot_analysis,
-                            strategic_recommendations: fullClientData.strategic_recommendations,
-                            executive_summary: fullClientData.executive_summary
-                        }
-
-                        return <AnalysisDashboard data={analysisData} />
-                    })()}
+                    <AnalysisDashboard data={analysisData} />
                 </TabsContent>
 
 
@@ -449,6 +455,10 @@ export default function DashboardPage() {
                     }
                 }}
             />
+            {/* Hidden Cover Slide for PDF Generation */}
+            <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0">
+                <CoverSlide clientData={analysisData} />
+            </div>
         </div>
     )
 }
